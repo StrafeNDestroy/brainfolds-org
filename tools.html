@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link rel="icon" href="./favicon.ico" sizes="any"/>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="./favicon-32.png"/>
+<link rel="manifest" href="./manifest.json"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#1A1208"/>
+<meta name="robots" content="index, follow"/>
+<meta name="description" content="Recommended tools, books, and resources for every Brainfolds curriculum — with honest descriptions and affiliate links that support the site."/>
+<meta property="og:title" content="Tools & Resources — Brainfolds"/>
+<meta property="og:description" content="Recommended tools and resources for every Brainfolds curriculum."/>
+<meta property="og:url" content="https://brainfolds.org/tools.html"/>
+<meta property="og:site_name" content="Brainfolds"/>
+<meta property="og:type" content="website"/>
+
+<link rel="canonical" href="https://brainfolds.org/tools.html"/>
+<title>Tools & Resources — Brainfolds</title>
+<link rel="preload" href="./assets/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="stylesheet" href="./assets/css/style.css"/>
+<style>
+  .tools-wrap { max-width: 1040px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  .tools-hero { margin-bottom: 40px; }
+  .tools-hero h1 { border-bottom: none; padding-bottom: 0; margin-bottom: 10px; }
+  .tools-hero p { color: var(--text-muted); font-size: 0.95rem; max-width: 600px; line-height: 1.7; }
+
+  .affiliate-note {
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-dim); border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 12px 16px; margin-bottom: 36px;
+    font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em;
+    color: var(--text-muted); line-height: 1.6;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px;
+    align-items: center;
+  }
+  .filter-label {
+    font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-muted); margin-right: 4px;
+  }
+  .filter-btn {
+    font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em;
+    padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .filter-btn.active { background: rgba(196,146,42,0.12); border-color: var(--accent); color: var(--accent); }
+
+  /* Tools grid */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .tool-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: border-color 0.15s;
+  }
+  .tool-card:hover { border-color: var(--accent-dim); }
+
+  .tool-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .tool-name { font-family: var(--serif); font-size: 1rem; font-weight: 700; color: var(--text-hi); line-height: 1.3; }
+  .tool-price { font-family: var(--mono); font-size: 0.65rem; color: var(--accent); white-space: nowrap; background: rgba(196,146,42,0.1); border: 1px solid rgba(196,146,42,0.2); padding: 2px 8px; border-radius: 20px; }
+
+  .tool-desc { font-size: 0.85rem; color: var(--text-mid); line-height: 1.6; flex: 1; }
+  .tool-why { font-size: 0.78rem; color: var(--text-muted); font-style: italic; line-height: 1.5; border-top: 1px solid var(--border); padding-top: 8px; }
+
+  .tool-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tool-tag { font-family: var(--mono); font-size: 0.6rem; color: var(--text-faint); background: var(--raised); padding: 2px 7px; border-radius: 20px; }
+
+  .tool-cta {
+    display: block; text-align: center; padding: 9px;
+    background: var(--accent); color: var(--base);
+    border-radius: var(--radius); text-decoration: none;
+    font-family: var(--mono); font-size: 0.72rem; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    transition: background 0.15s; margin-top: 4px;
+  }
+  .tool-cta:hover { background: var(--accent-dim); color: var(--text-hi); }
+
+  .tools-empty {
+    grid-column: 1 / -1; text-align: center; padding: 48px 0;
+    font-size: 0.88rem; color: var(--text-faint); font-style: italic;
+  }
+
+  .tools-count {
+    font-family: var(--mono); font-size: 0.68rem; color: var(--text-muted);
+    margin-bottom: 20px; letter-spacing: 0.08em;
+  }
+
+  @media (max-width: 640px) {
+    .tools-grid { grid-template-columns: 1fr; }
+  }
+</style>
+<meta property="og:image" content="https://brainfolds.org/og-image.jpg"/>
+<meta name="twitter:card" content="summary_large_image"/>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="./index.html" style="text-decoration:none;"><span class="site-logo">Brainfolds</span></a>
+    <nav class="site-nav">
+      <a class="site-nav-link" href="./self-sufficiency/index.html">Self Sufficiency</a>
+      <a class="site-nav-link" href="./scholarium/index.html">Scholarium</a>
+      <a class="site-nav-link site-nav-active" href="./tools.html">Tools</a>
+      <a class="site-nav-link" href="./contribute.html">Contribute</a>
+      <a class="site-nav-link" href="./donate.html">Donate</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main-content">
+<div class="tools-wrap">
+
+  <div class="tools-hero">
+    <h1>Tools &amp; Resources</h1>
+    <p>Every tool listed here is something worth having for the corresponding curriculum. Honest descriptions — nothing recommended that isn't genuinely useful.</p>
+  </div>
+
+  <div class="affiliate-note">
+    Affiliate disclosure: links marked with → are affiliate links. If you buy through them, Brainfolds earns a small commission at no extra cost to you. This is how the site stays free.
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar" id="filter-bar">
+    <span class="filter-label">Filter:</span>
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+    <button class="filter-btn" data-filter="self-sufficiency" onclick="setFilter('self-sufficiency')">Self Sufficiency</button>
+    <button class="filter-btn" data-filter="scholarium" onclick="setFilter('scholarium')">Scholarium</button>
+  </div>
+
+  <div class="tools-count" id="tools-count"></div>
+  <div class="tools-grid" id="tools-grid">
+    <div class="tools-empty">Loading tools...</div>
+  </div>
+
+</div>
+</main>
+
+<footer>
+  <p><em>Brainfolds</em> — Free curricula for curious people</p>
+  <p style="margin-top:6px;">
+    <a href="./donate.html" style="color:var(--accent);text-decoration:none;">Support Brainfolds</a>
+    &nbsp;·&nbsp;
+    <a href="./contribute.html" style="color:var(--accent);text-decoration:none;">Contribute a chapter</a>
+  </p>
+</footer>
+
+<script src="./assets/js/brainfolds-logger.js"></script>
+<script src="./assets/js/script.js" defer></script>
+<script>
+// Tools data embedded for file:// compatibility — kept in sync with tools.json
+const TOOLS_EMBEDDED = {
+  "meta": {
+    "last_updated": "2026-03-22",
+    "version": "1.0"
+  },
+  "tools": [
+    {
+      "id": "tool-001",
+      "name": "Hori Hori Garden Knife",
+      "description": "The most versatile hand tool for any grower. Digs, cuts, measures soil depth, and transplants \u2014 one tool that replaces five.",
+      "why": "Every chapter in soil science and growing assumes you can get into the ground. This is how.",
+      "affiliate_url": "https://amzn.to/example-hori-hori",
+      "image_url": "",
+      "price_range": "$30\u201360",
+      "curriculum": "self-sufficiency",
+      "sections": [
+        "s01-foundation",
+        "s03-land-water",
+        "s04-growing"
+      ],
+      "courses": [
+        "c03-soil-science"
+      ],
+      "tags": [
+        "hand-tools",
+        "soil",
+        "digging",
+        "transplanting"
+      ],
+      "active": true
+    },
+    {
+      "id": "tool-002",
+      "name": "LaMotte Soil pH Test Kit",
+      "description": "Accurate soil pH testing without sending samples to a lab. Essential for understanding nutrient availability before you plant.",
+      "why": "Soil pH chapter is meaningless without being able to test your own soil. This kit is what the professionals use.",
+      "affiliate_url": "https://amzn.to/example-lamotte",
+      "image_url": "",
+      "price_range": "$25\u201340",
+      "curriculum": "self-sufficiency",
+      "sections": [
+        "s01-foundation"
+      ],
+      "courses": [
+        "c03-soil-science"
+      ],
+      "tags": [
+        "testing",
+        "soil",
+        "pH",
+        "lab"
+      ],
+      "active": true
+    },
+    {
+      "id": "tool-003",
+      "name": "Field Guide to Texas Trees",
+      "description": "The definitive regional plant identification reference for Central Texas. Covers native and naturalized species with photographs.",
+      "why": "Plant taxonomy requires a good regional field guide. Most national guides miss half the Texas species.",
+      "affiliate_url": "https://amzn.to/example-tx-trees",
+      "image_url": "",
+      "price_range": "$20\u201335",
+      "curriculum": "self-sufficiency",
+      "sections": [
+        "s01-foundation"
+      ],
+      "courses": [
+        "c02-plant-taxonomy"
+      ],
+      "tags": [
+        "books",
+        "identification",
+        "Texas",
+        "field-guide"
+      ],
+      "active": true
+    },
+    {
+      "id": "tool-004",
+      "name": "Echo SRM-225 String Trimmer",
+      "description": "Professional-grade string trimmer suitable for maintaining land and clearing growth around the homestead. Reliable 2-stroke engine, good parts availability.",
+      "why": "Maintaining clear paths, edges, and open areas is essential for a working property. A quality trimmer saves hours of hand work.",
+      "affiliate_url": "",
+      "image_url": "",
+      "price_range": "$200\u2013280",
+      "curriculum": "self-sufficiency",
+      "sections": [],
+      "courses": [],
+      "tags": [
+        "power-tools",
+        "land-maintenance",
+        "clearing"
+      ],
+      "active": true
+    }
+  ]
+};
+
+let allTools = [];
+let currentFilter = 'all';
+
+async function loadTools() {
+  try {
+    // Try fetch first (works on Live Server and live site)
+    const res  = await fetch('./tools.json?v=' + Date.now());
+    const data = await res.json();
+    allTools   = data.tools.filter(t => t.active);
+  } catch (err) {
+    // Fall back to embedded data (works on file://)
+    allTools = TOOLS_EMBEDDED.tools.filter(t => t.active);
+  }
+  renderTools();
+}
+
+function setFilter(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  renderTools();
+}
+
+function renderTools() {
+  const grid     = document.getElementById('tools-grid');
+  const countEl  = document.getElementById('tools-count');
+  const filtered = currentFilter === 'all'
+    ? allTools
+    : allTools.filter(t => t.curriculum === currentFilter);
+
+  countEl.textContent = `${filtered.length} tool${filtered.length !== 1 ? 's' : ''}`;
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="tools-empty">No tools in this category yet.</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(tool => `
+    <div class="tool-card">
+      <div class="tool-header">
+        <div class="tool-name">${escHtml(tool.name)}</div>
+        ${tool.price_range ? `<div class="tool-price">${escHtml(tool.price_range)}</div>` : ''}
+      </div>
+      <div class="tool-desc">${escHtml(tool.description)}</div>
+      ${tool.why ? `<div class="tool-why">${escHtml(tool.why)}</div>` : ''}
+      ${tool.tags?.length ? `
+        <div class="tool-tags">
+          ${tool.tags.map(t => `<span class="tool-tag">${escHtml(t)}</span>`).join('')}
+        </div>` : ''}
+      ${tool.affiliate_url ? `
+        <a class="tool-cta" href="#" target="_blank" rel="noopener sponsored">
+          View on Amazon →
+        </a>` : ''}
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escAttr(s) {
+  return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+loadTools();
+</script>
+</body>
+</html>

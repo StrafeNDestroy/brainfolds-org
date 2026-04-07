@@ -1,0 +1,2708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link rel="icon" href="./favicon.ico" sizes="any"/>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="./favicon-32.png"/>
+<link rel="manifest" href="./manifest.json"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#1A1208"/>
+<meta name="robots" content="index, follow"/>
+<meta name="description" content="Contribute a chapter to Brainfolds — write in Markdown, preview live, submit for review."/>
+<title>Contribute a Chapter — Brainfolds</title>
+<link rel="preload" href="./assets/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="stylesheet" href="./assets/css/style.css"/>
+<style>
+  /* ── Scroll containment — prevent chaining to parent iframe in dev ── */
+  html, body { overscroll-behavior: none; }
+
+  /* ── Page layout ── */
+  .contribute-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  .contribute-hero {
+    margin-bottom: 36px;
+  }
+
+  .contribute-hero h1 {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 8px;
+  }
+
+  .contribute-hero p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0;
+  }
+
+  /* ── Metadata form ── */
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  @media (max-width: 640px) {
+    .meta-grid { grid-template-columns: 1fr; }
+  }
+
+  .meta-field { display: flex; flex-direction: column; gap: 6px; }
+  .meta-field.full { grid-column: 1 / -1; }
+
+  .field-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .field-label span {
+    color: var(--accent);
+    margin-left: 4px;
+  }
+
+  .field-input, .field-select, .field-textarea {
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-hi);
+    font-family: var(--sans);
+    font-size: 0.88rem;
+    padding: 10px 12px;
+    transition: border-color 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .field-input::placeholder,
+  .field-textarea::placeholder { color: var(--text-faint); }
+
+  .field-input:focus,
+  .field-select:focus,
+  .field-textarea:focus {
+    outline: none;
+    border-color: var(--accent-dim);
+  }
+
+  .field-select { cursor: pointer; }
+  .field-select option { background: var(--raised); }
+
+  .field-textarea {
+    resize: vertical;
+    min-height: 72px;
+    font-family: var(--sans);
+  }
+
+  .char-count {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--text-faint);
+    text-align: right;
+    margin-top: 2px;
+  }
+
+  .char-count.warn { color: var(--warn); }
+  .char-count.over { color: var(--danger); }
+
+  /* ── Drop zone ── */
+  .dropzone {
+    border: 2px dashed var(--border-mid);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 8px;
+    background: var(--surface);
+  }
+
+  .dropzone:hover,
+  .dropzone.drag-over {
+    border-color: var(--accent);
+    background: rgba(196,146,42,0.05);
+  }
+
+  .dropzone-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    opacity: 0.4;
+  }
+
+  .dropzone-text {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .dropzone-sub {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+  }
+
+  .dropzone-loaded {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--success);
+    margin-top: 8px;
+    display: none;
+  }
+
+  /* ── Type toggle ── */
+  .type-toggle-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .type-toggle-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .type-toggle-btn {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    padding: 7px 18px;
+    border-radius: 3px;
+    cursor: pointer;
+    background: var(--raised);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    transition: all 0.12s;
+  }
+  .type-toggle-btn:hover { border-color: var(--accent-dim); color: var(--text-hi); }
+  .type-toggle-btn.active { background: rgba(196,146,42,0.12); border-color: var(--accent); color: var(--accent); }
+  .type-toggle-hint {
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Split pane ── */
+  .split-pane-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .split-pane-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .split-pane {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  @media (max-width: 760px) { .split-pane { grid-template-columns: 1fr; } }
+  .pane { display: flex; flex-direction: column; height: 600px; }
+  .pane-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--raised);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.63rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .pane-header .pane-action {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .pane-header .pane-action:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .pane + .pane { border-left: 1px solid var(--border); }
+  .md-editor {
+    flex: 1;
+    background: var(--base);
+    border: none;
+    color: var(--text-hi);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.75;
+    padding: 16px;
+    resize: none;
+    min-height: 0;
+    transition: none;
+    box-sizing: border-box;
+    width: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .md-editor:focus { outline: none; }
+
+  /* ── Live preview — renders as actual Brainfolds page ── */
+  .preview-frame {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    background: var(--base);
+    overscroll-behavior: contain;
+  }
+  /* Fake site chrome inside preview */
+  .preview-chrome-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .preview-chrome-logo {
+    font-family: var(--serif);
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-hi);
+  }
+  .preview-chrome-nav {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+  }
+  .preview-chrome-nav span {
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 3px 7px;
+    border-radius: 3px;
+  }
+  .preview-chrome-nav span.active { color: var(--accent); background: rgba(196,146,42,0.08); }
+  .preview-breadcrumb {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 5px 16px;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--text-faint);
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+  .preview-chapter-nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    overflow-x: auto;
+    display: flex;
+  }
+  .preview-chapter-nav span {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    padding: 10px 12px;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+  .preview-chapter-nav span.active { color: var(--accent); border-bottom-color: var(--accent); }
+  /* Subject preview chrome */
+  .preview-subject-hero {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 16px;
+    text-align: center;
+  }
+  .preview-subject-hero .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .preview-subject-hero h2 {
+    font-family: var(--serif);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-hi);
+    margin-bottom: 6px;
+  }
+  .preview-subject-hero p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+  .preview-chapter-list {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .preview-chapter-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    display: flex;
+    gap: 12px;
+    font-size: 0.85rem;
+    color: var(--text-mid);
+  }
+  .preview-chapter-item .ch-num { font-family: var(--mono); font-size: 0.65rem; color: var(--accent); flex-shrink: 0; }
+
+  /* Content area inside preview */
+  .preview-content {
+    padding: 24px 16px;
+    font-size: 0.88rem;
+    line-height: 1.75;
+    color: var(--text-mid);
+    max-width: 100%;
+  }
+  .preview-toc-layout { display: flex; gap: 0; }
+  .preview-toc-sidebar {
+    width: 160px;
+    flex-shrink: 0;
+    padding: 14px 10px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .preview-toc-sidebar .toc-heading {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .preview-toc-sidebar .toc-item {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 3px 6px;
+    border-radius: 2px;
+    margin-bottom: 2px;
+    border-left: 2px solid transparent;
+  }
+  .preview-toc-sidebar .toc-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(196,146,42,0.06); }
+  .preview-toc-main { flex: 1; padding: 20px 16px; min-width: 0; overflow: hidden; }
+  .preview-content h1 { font-family: var(--serif); font-size: 1.25rem; font-weight: 700; color: var(--text-hi); margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .preview-content h2 { font-family: var(--serif); font-size: 1.05rem; font-weight: 700; color: var(--accent-glow); margin: 22px 0 10px; }
+  .preview-content h3 { font-family: var(--sans); font-size: 0.75rem; font-weight: 500; color: var(--accent); margin: 16px 0 6px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .preview-content p { margin-bottom: 12px; }
+  .preview-content strong { font-weight: 600; color: var(--text-hi); }
+  .preview-content em { font-style: italic; }
+  .preview-content a { color: var(--accent); }
+  .preview-content code { font-family: var(--mono); font-size: 0.8em; background: var(--raised); padding: 1px 4px; border-radius: 3px; color: var(--accent); }
+  .preview-content pre { background: var(--raised); padding: 12px 14px; border-radius: var(--radius); overflow-x: auto; border-left: 3px solid var(--accent-dim); margin: 12px 0; font-size: 0.75rem; }
+  .preview-content pre code { background: none; padding: 0; color: var(--text-mid); }
+  .preview-content ul, .preview-content ol { padding-left: 1.4em; margin-bottom: 12px; }
+  .preview-content li { margin-bottom: 3px; }
+  .preview-content blockquote { border-left: 3px solid var(--accent); padding: 8px 14px; background: var(--raised); margin: 12px 0; font-style: italic; color: var(--text-muted); border-radius: 0 var(--radius) var(--radius) 0; }
+  .preview-content hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+  .preview-content table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.8rem; }
+  .preview-content th { background: var(--raised); color: var(--text-hi); padding: 7px 10px; border: 1px solid var(--border); font-weight: 600; text-align: left; }
+  .preview-content td { padding: 6px 10px; border: 1px solid var(--border); }
+  .preview-content figure { margin: 14px 0; }
+  .preview-content figure img { width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  .preview-content figcaption { font-family: var(--mono); font-size: 0.65rem; color: var(--text-muted); margin-top: 5px; font-style: italic; }
+  .preview-video-embed { margin: 14px 0; background: var(--raised); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; }
+  .preview-video-embed .play-icon { font-size: 1.5rem; opacity: 0.4; margin-bottom: 6px; }
+  .preview-video-embed p { font-family: var(--mono); font-size: 0.65rem; color: var(--text-muted); margin: 0; }
+  .preview-empty { color: var(--text-faint); font-style: italic; font-size: 0.82rem; text-align: center; padding: 40px 16px; }
+
+  .preview-empty {
+    color: var(--text-faint);
+    font-style: italic;
+    font-size: 0.85rem;
+    text-align: center;
+    margin-top: 80px;
+  }
+
+  /* ── MD template reference ── */
+  .template-hint {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-dim);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .template-hint strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  details summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    user-select: none;
+  }
+
+  details[open] summary { margin-bottom: 12px; }
+
+  /* ── Submit ── */
+  .submit-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .submit-btn {
+    padding: 12px 28px;
+    background: var(--accent);
+    color: var(--base);
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .submit-btn:hover { background: var(--accent-dim); color: var(--text-hi); }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .submit-note {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+  }
+
+  .form-msg {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    margin-top: 16px;
+    display: none;
+  }
+
+  .form-msg.success { background: var(--success-bg); color: var(--success); display: block; }
+  .form-msg.error   { background: var(--danger-bg);  color: var(--danger);  display: block; }
+
+  .toggle-group { display:flex; gap:8px; margin-top:4px; }
+  .toggle-btn {
+    font-family: var(--mono); font-size:0.72rem; letter-spacing:0.08em;
+    padding:7px 16px; border-radius:4px; cursor:pointer;
+    background:var(--raised); border:1px solid var(--border);
+    color:var(--text-mid); transition:all 0.12s;
+  }
+  .toggle-btn:hover { border-color:var(--accent-dim); color:var(--text-hi); }
+  .toggle-btn.active { background:rgba(196,146,42,0.12); border-color:var(--accent); color:var(--accent); }
+  .field-hint { font-size:0.72rem; color:var(--text-muted); margin-top:5px; }
+
+  .form-step {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-top: 4px;
+  }
+
+
+  /* ── Image thumbnail cards (upload-first, click-to-insert) ── */
+  .attach-thumb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .attach-thumb-card {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.12s;
+  }
+  .attach-thumb-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .attach-thumb-card.attach-error {
+    border-color: rgba(212,96,96,0.4);
+    cursor: default;
+  }
+  .attach-thumb-card.attach-error:hover {
+    transform: none;
+    border-color: rgba(212,96,96,0.4);
+  }
+  .attach-thumb-img {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    display: block;
+  }
+  .attach-thumb-error-body {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    background: var(--danger-bg);
+  }
+  .attach-thumb-footer {
+    padding: 5px 7px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .attach-thumb-name {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .attach-thumb-card.attach-error .attach-thumb-name {
+    color: var(--danger);
+  }
+  .attach-thumb-size {
+    font-family: var(--mono);
+    font-size: 0.56rem;
+    color: var(--text-faint);
+    flex-shrink: 0;
+  }
+  .attach-thumb-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(26,18,8,0.75);
+    border: none;
+    border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.12s, color 0.12s;
+    line-height: 1;
+    padding: 0;
+  }
+  .attach-thumb-card:hover .attach-thumb-remove { opacity: 1; }
+  .attach-thumb-remove:hover { color: var(--danger); background: rgba(42,16,16,0.9); }
+  .attach-thumb-insert-hint {
+    position: absolute;
+    inset: 0;
+    background: rgba(196,146,42,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.12s;
+    pointer-events: none;
+  }
+  .attach-thumb-card:not(.attach-error):hover .attach-thumb-insert-hint { opacity: 1; }
+  /* Used indicator — when image is already referenced in Markdown */
+  .attach-thumb-card.in-use {
+    border-color: var(--accent-dim);
+  }
+  .attach-thumb-card.in-use::after {
+    content: '✓';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: var(--accent);
+    color: var(--base);
+    font-size: 0.6rem;
+    font-weight: 700;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+  }
+
+  /* ── Attachment upload ── */
+  .attach-section {
+    margin-bottom: 28px;
+  }
+  .attach-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .attach-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .attach-hint {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--text-faint);
+    letter-spacing: 0.04em;
+  }
+  .attach-zone {
+    border: 2px dashed var(--border-mid);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .attach-zone:hover,
+  .attach-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(196,146,42,0.04);
+  }
+  .attach-zone-text {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+  }
+  .attach-zone-sub {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+  }
+  .attach-file-list {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .attach-file-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+  }
+  .attach-file-icon {
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  .attach-file-name {
+    flex: 1;
+    color: var(--text-hi);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .attach-file-size {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--text-faint);
+    flex-shrink: 0;
+  }
+  .attach-file-remove {
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: color 0.12s;
+    flex-shrink: 0;
+  }
+  .attach-file-remove:hover { color: var(--danger); }
+  .attach-file-item.attach-error {
+    border-color: rgba(212,96,96,0.3);
+    background: var(--danger-bg);
+  }
+  .attach-file-item.attach-error .attach-file-name { color: var(--danger); }
+  .attach-progress {
+    margin-top: 8px;
+    display: none;
+  }
+  .attach-progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .attach-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+  .attach-total {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--text-faint);
+    margin-top: 5px;
+    letter-spacing: 0.04em;
+  }
+  .attach-total.warn { color: var(--warn); }
+  .attach-total.over { color: var(--danger); }
+
+  /* ── Fullscreen preview ── */
+  .split-pane.fullscreen-active {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    grid-template-columns: 1fr 1fr;
+    border-radius: 0;
+    border: none;
+  }
+  .split-pane.fullscreen-active .pane {
+    height: 100vh;
+  }
+  .split-pane.fullscreen-active .pane-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 12px 20px;
+  }
+  .pane-action-fullscreen {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  /* Save draft button */
+  .save-draft-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    justify-content: flex-end;
+  }
+  .save-draft-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .save-draft-btn:hover {
+    border-color: var(--accent-dim);
+    color: var(--accent);
+  }
+  /* Image path warning */
+  .img-path-warn {
+    background: var(--warn-bg);
+    border: 1px solid rgba(232,160,48,0.25);
+    border-left: 3px solid var(--warn);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--warn);
+    line-height: 1.6;
+    display: none;
+  }
+  /* Missing images = red + pulsing border — much more visible */
+  .img-path-warn.has-missing {
+    background: var(--danger-bg);
+    border: 1px solid rgba(212,96,96,0.4);
+    border-left: 4px solid var(--danger);
+    color: var(--danger);
+    font-size: 0.72rem;
+    padding: 12px 16px;
+    animation: warn-pulse 2s ease-in-out infinite;
+  }
+  @keyframes warn-pulse {
+    0%, 100% { border-left-color: var(--danger); box-shadow: none; }
+    50%       { border-left-color: #ff6b6b; box-shadow: -2px 0 8px rgba(212,96,96,0.4); }
+  }
+  .img-path-warn.visible { display: block; }
+  .img-path-warn strong { color: var(--text-hi); font-family: var(--mono); }
+  .img-path-warn.has-missing strong { color: #ff9999; }
+  .img-path-warn code {
+    background: rgba(0,0,0,0.2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+  .img-path-warn.has-missing code {
+    background: rgba(212,96,96,0.15);
+    color: #ffaaaa;
+  }
+  .img-path-fix-btn {
+    background: transparent;
+    border: 1px solid rgba(232,160,48,0.4);
+    border-radius: 3px;
+    color: var(--warn);
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    padding: 3px 10px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: all 0.12s;
+    display: inline-block;
+  }
+  .img-path-fix-btn:hover { background: rgba(232,160,48,0.1); }
+</style>
+<link rel="canonical" href="https://brainfolds.org/contribute.html"/>
+<meta property="og:image" content="https://brainfolds.org/og-image.jpg"/>
+<meta property="og:type" content="website"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<script src="./assets/js/brainfolds-logger.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3/dist/jszip.min.js" defer></script>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="./index.html" style="text-decoration:none;">
+      <span class="site-logo">Brainfolds</span>
+    </a>
+    <nav class="site-nav">
+      <a class="site-nav-link" href="./self-sufficiency/">Self Sufficiency</a>
+      <a class="site-nav-link" href="./scholarium/">Scholarium</a>
+      <a class="site-nav-link" href="./tools.html">Tools</a>
+      <a class="site-nav-link" href="./contribute.html">Contribute</a>
+      <a class="site-nav-link" href="./donate.html">Donate</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main-content">
+<div class="contribute-wrap">
+
+  <div class="contribute-hero">
+    <h1>Contribute a chapter</h1>
+<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 var(--radius) var(--radius) 0;padding:16px 20px;margin:24px 0;">
+  <div style="font-family:var(--mono);font-size:0.62rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--accent);margin-bottom:12px;">Downloads — start here</div>
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    <a href="./chapter-template.md" download style="display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text-hi);font-size:0.88rem;font-weight:600;">
+      <span style="font-family:var(--mono);font-size:0.7rem;background:rgba(196,146,42,0.12);border:1px solid rgba(196,146,42,0.25);color:var(--accent);padding:3px 8px;border-radius:3px;flex-shrink:0;">↓ .md</span>
+      Chapter template — the Markdown file you write in
+    </a>
+    <a href="./contributor-guide.md" download style="display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text-hi);font-size:0.88rem;font-weight:600;">
+      <span style="font-family:var(--mono);font-size:0.7rem;background:rgba(196,146,42,0.12);border:1px solid rgba(196,146,42,0.25);color:var(--accent);padding:3px 8px;border-radius:3px;flex-shrink:0;">↓ .md</span>
+      Contributor guide — Markdown, images, YouTube, LaTeX math reference
+    </a>
+    <a href="./writing-guide.md" download style="display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text-hi);font-size:0.88rem;font-weight:600;">
+      <span style="font-family:var(--mono);font-size:0.7rem;background:rgba(196,146,42,0.12);border:1px solid rgba(196,146,42,0.25);color:var(--accent);padding:3px 8px;border-radius:3px;flex-shrink:0;">↓ .md</span>
+      Writing guide — how to write to teach (the First Principles method)
+    </a>
+  </div>
+</div>
+
+
+    <p>Write in Markdown, preview live, submit for review. Every submission is read before it goes live.</p>
+  </div>
+
+  <!-- ── DOWNLOADS ── -->
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:36px;">
+    <a href="./writing-guide.md" download="brainfolds-writing-guide.md"
+       style="display:inline-flex;align-items:center;gap:10px;padding:12px 20px;
+              background:var(--surface);border:1px solid var(--border);
+              border-left:3px solid var(--accent);border-radius:0 var(--radius) var(--radius) 0;
+              text-decoration:none;color:var(--text-hi);transition:all 0.15s;font-size:0.88rem;">
+      <span style="font-size:1.2rem;">📄</span>
+      <div>
+        <div style="font-weight:600;">Writing Style Guide</div>
+        <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:0.08em;">brainfolds-writing-guide.md</div>
+      </div>
+    </a>
+    <a href="./chapter-template.md" download="brainfolds-chapter-template.md"
+       style="display:inline-flex;align-items:center;gap:10px;padding:12px 20px;
+              background:var(--surface);border:1px solid var(--border);
+              border-left:3px solid var(--accent-dim);border-radius:0 var(--radius) var(--radius) 0;
+              text-decoration:none;color:var(--text-hi);transition:all 0.15s;font-size:0.88rem;">
+      <span style="font-size:1.2rem;">📝</span>
+      <div>
+        <div style="font-weight:600;">Chapter Template</div>
+        <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);letter-spacing:0.08em;">brainfolds-chapter-template.md</div>
+      </div>
+    </a>
+  </div>
+  <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:36px;">
+    Download the writing guide before you start — it explains the style every Brainfolds chapter follows.
+    The template gives you the correct structure to fill in.
+  </p>
+
+  <!-- ── METADATA ── -->
+  <div class="meta-grid">
+
+    <!-- Row 1: your name (full width — optional, low friction first) -->
+    <div class="meta-field full">
+      <label class="field-label" for="f-author">Your name</label>
+      <input class="field-input" id="f-author" type="text"
+        placeholder="Optional — shown on the chapter" maxlength="20"/>
+      <div class="char-count" id="cc-author">0 / 20</div>
+    </div>
+
+    <!-- Row 2: curriculum | short description -->
+    <div class="meta-field">
+      <label class="field-label" for="f-curriculum">Curriculum <span>*</span></label>
+      <select class="field-select" id="f-curriculum" onchange="onCurriculumChange()">
+        <option value="">— select one —</option>
+        <option value="self-sufficiency">Self Sufficiency (self-sufficient living)</option>
+        <option value="scholarium">Scholarium (liberal education)</option>
+      </select>
+      <p class="field-hint">Scholarium is not yet accepting contributions — <a href="./scholarium/index.html" style="color:var(--accent);">see what's planned</a>.</p>
+    </div>
+
+    <div class="meta-field">
+      <label class="field-label" for="f-desc">Short description <span>*</span></label>
+      <input class="field-input" id="f-desc" type="text"
+        placeholder="One sentence — used in meta tags" maxlength="300"/>
+      <div class="char-count" id="cc-desc">0 / 300</div>
+    </div>
+
+    <!-- STEP 2: Subject — appears after curriculum selected -->
+    <div class="meta-field full form-step" id="course-type-row" style="display:none;">
+      <label class="field-label">Subject <span>*</span></label>
+      <div class="toggle-group">
+        <button type="button" class="toggle-btn active" id="btn-existing" onclick="setCourseType('existing')">Existing subject</button>
+        <button type="button" class="toggle-btn" id="btn-new" onclick="setCourseType('new')">New subject</button>
+      </div>
+    </div>
+
+    <!-- Existing subject: dropdown -->
+    <div class="meta-field full" id="existing-course-row" style="display:none;">
+      <label class="field-label" for="f-existing-course">Select subject <span>*</span></label>
+      <select class="field-select" id="f-existing-course" onchange="onExistingCourseChange()">
+        <option value="">— select a subject —</option>
+      </select>
+      <input type="hidden" id="f-section"/>
+      <input type="hidden" id="f-course"/>
+    </div>
+
+    <!-- New subject: name field only (section/course key hidden, auto-generated on review) -->
+    <div class="meta-field full" id="new-subject-row" style="display:none;">
+      <label class="field-label" for="f-subject-name">Subject name <span>*</span></label>
+      <input class="field-input" id="f-subject-name" type="text"
+        placeholder="e.g. Mycology or Composting" maxlength="80"/>
+      <input type="hidden" id="f-section-s2" value=""/>
+      <input type="hidden" id="f-course-s2" value=""/>
+    </div>
+
+    <!-- STEP 3: Chapter — appears after subject chosen -->
+    <div class="meta-field full form-step" id="chapter-type-row" style="display:none;">
+      <label class="field-label">Chapter <span>*</span></label>
+      <div class="toggle-group">
+        <button type="button" class="toggle-btn active" id="btn-chapter-new" onclick="setChapterType('new')">New chapter</button>
+        <button type="button" class="toggle-btn" id="btn-chapter-replace" onclick="setChapterType('replace')">Replacing existing</button>
+      </div>
+    </div>
+
+    <!-- New chapter: enter the chapter name -->
+    <div class="meta-field full" id="chapter-new-row" style="display:none;">
+      <label class="field-label" for="f-title">Chapter name <span>*</span></label>
+      <input class="field-input" id="f-title" type="text"
+        placeholder="e.g. The Nitrogen Cycle" maxlength="100"/>
+      <div class="char-count" id="cc-title">0 / 100</div>
+    </div>
+
+    <!-- Replacing existing: pick from the subject's chapter list -->
+    <div class="meta-field full" id="chapter-replace-row" style="display:none;">
+      <label class="field-label" for="f-chapter-replace">Which chapter are you replacing? <span>*</span></label>
+      <select class="field-select" id="f-chapter-replace" onchange="onChapterReplaceChange()">
+        <option value="">— select a chapter —</option>
+      </select>
+      <p class="field-hint">Your submission will be reviewed against the existing chapter before any replacement is made.</p>
+    </div>
+
+    <!-- STEP 4: Why this belongs — appears after chapter step answered -->
+    <div class="meta-field full form-step" id="reason-row" style="display:none;">
+      <label class="field-label" for="f-reason">Why this belongs on Brainfolds <span>*</span></label>
+      <textarea class="field-textarea" id="f-reason"
+        placeholder="What gap does this fill? Why is it useful to learners?"
+        maxlength="500"></textarea>
+      <div class="char-count" id="cc-reason">0 / 500</div>
+    </div>
+
+  </div>
+
+  <!-- ── TYPE TOGGLE + EDITOR ── -->
+  <div class="type-toggle-bar">
+    <span class="type-toggle-label">I am writing a</span>
+    <button type="button" class="type-toggle-btn active" id="toggle-chapter" onclick="setWritingType('chapter')">Chapter</button>
+    <button type="button" class="type-toggle-btn" id="toggle-subject" onclick="setWritingType('subject')">New Subject</button>
+    <span class="type-toggle-hint">Toggle loads the matching template into the editor</span>
+  </div>
+
+  <!-- Drop zones row — MD file + Images side by side above the editor -->
+  <div style="margin-bottom:8px;display:flex;gap:10px;align-items:stretch;">
+    <!-- MD file drop -->
+    <div class="dropzone" id="dropzone" style="flex:1;padding:12px 16px;display:flex;align-items:center;gap:12px;text-align:left;">
+      <span style="font-size:1.3rem;opacity:0.4;">📄</span>
+      <div style="flex:1;min-width:0;">
+        <div class="dropzone-text" style="margin:0 0 2px;">Drop .md file or click to browse</div>
+        <div class="dropzone-sub">.md .markdown .txt</div>
+      </div>
+      <div class="dropzone-loaded" id="dropzone-loaded" style="flex-shrink:0;"></div>
+    </div>
+    <input type="file" id="file-input" accept=".md,.markdown,.txt" style="display:none"/>
+    <!-- Image drop (inline — click thumbnail to insert at cursor) -->
+    <div class="attach-zone" id="attach-zone" style="flex:1;padding:12px 16px;">
+      <div class="attach-zone-text">Drop images or click to browse</div>
+      <div class="attach-zone-sub">PNG/JPG · 500 KB each · click thumbnail to insert</div>
+    </div>
+    <input type="file" id="attach-input" accept=".png,.jpg,.jpeg" multiple style="display:none"/>
+  </div>
+
+  <!-- Save draft + image path warning -->
+  <div class="save-draft-row">
+    <div class="img-path-warn" id="img-path-warn"></div>
+    <label class="save-draft-btn" title="Load a previously saved draft zip" style="cursor:pointer;">
+      ↑ Load draft
+      <input type="file" id="load-draft-input" accept=".zip" style="display:none" onchange="loadDraft(this)"/>
+    </label>
+    <button class="save-draft-btn" onclick="saveDraft()" title="Save zip with Markdown and images">
+      ↓ Save draft
+    </button>
+  </div>
+
+  <!-- Split pane: editor left, live site preview right -->
+  <div class="split-pane" id="split-pane">
+    <div class="pane">
+      <div class="pane-header">
+        <span>Markdown</span>
+        <div style="display:flex;gap:6px;">
+          <span id="md-char-count" style="color:var(--text-faint);font-size:0.6rem;letter-spacing:0.04em;text-transform:none;">0 chars</span>
+          <button class="pane-action" onclick="loadTemplate()">↺ Reset template</button>
+        </div>
+      </div>
+      <textarea class="md-editor" id="md-editor" spellcheck="true" maxlength="100000"></textarea>
+    </div>
+    <div class="pane">
+      <div class="pane-header">
+        <span>Preview — how it looks on Brainfolds</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="preview-mode-badge" style="color:var(--accent);font-size:0.6rem;letter-spacing:0.04em;text-transform:none;">Chapter</span>
+          <button class="pane-action pane-action-fullscreen" id="fullscreen-btn"
+            onclick="toggleFullscreen()" title="Fullscreen editor + preview (Esc to exit)">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="display:block">
+              <path d="M1 1h5M1 1v5M15 1h-5M15 1v5M1 15h5M1 15v-5M15 15h-5M15 15v-5"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            Fullscreen
+          </button>
+        </div>
+      </div>
+      <div class="preview-frame" id="preview-frame">
+        <p class="preview-empty">Start typing to see your preview.</p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ── ATTACHMENTS — Images alongside the chapter ── -->
+  <div class="attach-section">
+    <div class="attach-header">
+      <span class="attach-label">Images</span>
+      <span class="attach-hint">PNG/JPG · 500 KB each · 5 images max · 2 MB total</span>
+    </div>
+
+    <div class="attach-file-list" id="attach-file-list"></div>
+    <div class="attach-progress" id="attach-progress">
+      <div class="attach-progress-bar"><div class="attach-progress-fill" id="attach-progress-fill"></div></div>
+      <div class="attach-total" id="attach-total">0 KB of 2,048 KB used</div>
+    </div>
+  </div>
+
+  <!-- ── SUBMIT ── -->
+  <div class="submit-row">
+    <button class="submit-btn" id="submit-btn" onclick="submitContent()">
+      Submit for review
+    </button>
+    <span class="submit-note">Reviewed within 48 hours · You will not be notified by email</span>
+  </div>
+  <div class="form-msg" id="form-msg"></div>
+
+</div>
+</main>
+
+<footer>
+  <p><em>Brainfolds</em> — Free curricula for curious people</p>
+  <p><a href="./index.html" style="color:var(--accent);text-decoration:none;">← Back to home</a></p>
+</footer>
+
+<!-- marked.js for MD→HTML conversion -->
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js" defer></script>
+<!-- KaTeX for LaTeX math rendering in the preview -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/marked-katex-extension@5/lib/index.umd.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+<script src="./assets/js/script.js" defer></script>
+
+<script>
+const SUPABASE_URL = 'https://ekykcbmtmqzltkwhhxny.supabase.co';
+
+// ── Supabase availability tracking ───────────────────────────────────────────
+// Log whether supabase-js loaded from CDN. If CDN is blocked or slow,
+// submissions will fail with a cryptic error — this makes it visible.
+(function() {
+  const _checkStart = Date.now();
+  function checkSupabase(attempt) {
+    if (typeof window.supabase !== 'undefined') {
+      BFLog.logSupabase('client ready', {
+        attempt, ms: Date.now() - _checkStart,
+      });
+    } else if (attempt < 20) {
+      setTimeout(() => checkSupabase(attempt + 1), 250);
+    } else {
+      BFLog.log('ERROR', 'supabase: client never loaded — CDN may be blocked', {
+        waited_ms: Date.now() - _checkStart,
+        url: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+      });
+    }
+  }
+  document.addEventListener('DOMContentLoaded', () => checkSupabase(1));
+})();
+const SUPABASE_KEY = 'sb_publishable_kUs7eM3cLtVCzJR6eBR4Qg_Fqo0k182';
+
+// ── Writing type toggle ──────────────────────────────────────
+let writingType = 'chapter'; // 'chapter' | 'subject'
+
+const LATEX_DISPLAY_EXAMPLE = String.raw`$$
+\frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$`;
+
+const CHAPTER_TEMPLATE = `## Why [TOPIC] matters
+
+[OPEN WITH THE PROBLEM. Start with a consequence, not a definition.
+What goes wrong without this knowledge? What becomes possible with it?]
+
+---
+
+## [Section heading]
+
+[Each section follows: problem → stakes → concept named → mechanism → failure mode → what it unlocks]
+
+[For YouTube videos — paste just the video ID from the URL:]
+[youtube: dQw4w9WgXcQ]
+*Caption: Replace this with a real video relevant to your chapter — X minutes*
+
+[For LaTeX math — inline:]
+The formula is $E = mc^2$.
+
+[For LaTeX math — display:]
+
+${LATEX_DISPLAY_EXAMPLE}
+
+[For code blocks — specify the language after the triple backticks:]
+\`\`\`python
+def example():
+    return "Replace with real code"
+\`\`\`
+
+[For inline code:] Use the \`print()\` function.
+
+---
+
+## [Next section]
+
+[Continue with the next concept. Each section should stand alone.]
+
+---
+
+## What this unlocks
+
+[End every chapter here. What can the reader now do, diagnose, or understand that they could not before?
+One or two paragraphs. Connect forward to the next chapter.]
+`;
+
+const SUBJECT_TEMPLATE = `## About this subject
+
+[What is this subject? Who is it for? Why does it belong on Brainfolds?
+Keep this brief — one or two paragraphs.]
+
+---
+
+## Chapter outline
+
+[List the chapters you plan to write, in order. Each should build on the last.
+Foundations come first. A reader who doesn't know the subject should be able
+to follow from chapter 1 to chapter N without hitting unexplained gaps.]
+
+### Chapter 1 — [Title]
+
+[One sentence describing what this chapter covers and why it comes first.]
+
+### Chapter 2 — [Title]
+
+[One sentence. What does this chapter add that chapter 1 set up?]
+
+### Chapter 3 — [Title]
+
+[Continue the pattern. You do not need all chapters planned — just enough
+to show the arc of the subject and that the ordering is logical.]
+
+---
+
+## Why this belongs on Brainfolds
+
+[How does this subject fit into the curriculum it belongs to?
+What makes your planned approach different from what's already available?]
+`;
+
+function setWritingType(type) {
+  writingType = type;
+  document.getElementById('toggle-chapter').classList.toggle('active', type === 'chapter');
+  document.getElementById('toggle-subject').classList.toggle('active', type === 'subject');
+  document.getElementById('preview-mode-badge').textContent = type === 'chapter' ? 'Chapter' : 'Subject';
+  loadTemplate();
+}
+
+function loadTemplate() {
+  const editor = document.getElementById('md-editor');
+  editor.value = writingType === 'chapter' ? CHAPTER_TEMPLATE : SUBJECT_TEMPLATE;
+  updatePreview();
+}
+
+// ── Sanitise ──────────────────────────────────────────────────
+function sanitize(html) {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/javascript:/gi, '');
+}
+
+// ── Process [youtube: ID] shortcodes ─────────────────────────
+function processShortcodes(md) {
+  return md.replace(
+    /\[youtube:\s*([A-Za-z0-9_-]{11})\](?:\s*\n\*(.+?)\*)?/g,
+    (match, id, caption) => {
+      const cap = caption ? `*${caption.trim()}*` : '';
+      return `<div class="preview-video-embed"><div class="play-icon">▶</div><p>YouTube — ${id}</p>${cap ? `<p style="font-style:italic;">${cap.slice(1,-1)}</p>` : ''}</div>`;
+    }
+  );
+}
+
+// ── Build site chrome for chapter preview ─────────────────────
+function buildChapterChrome(title, html) {
+  // Extract h2 ids for TOC
+  const h2matches = [...html.matchAll(/<h2[^>]*id="([^"]+)"[^>]*>(.*?)<\/h2>/g)];
+  const tocItems = h2matches.map((m, i) =>
+    `<div class="toc-item${i === 0 ? ' active' : ''}">${m[2].replace(/<[^>]+>/g,'')}</div>`
+  ).join('');
+
+  return `
+    <div class="preview-chrome-header">
+      <span class="preview-chrome-logo">Brainfolds</span>
+      <div class="preview-chrome-nav">
+        <span>Home</span><span class="active">Scholarium</span><span>Learn</span><span>Tools</span>
+      </div>
+    </div>
+    <div class="preview-breadcrumb">
+      <span>Scholarium</span><span>›</span><span>Course Name</span><span>›</span>
+      <span style="color:var(--text-mid);">${title || 'Chapter Title'}</span>
+    </div>
+    <div class="preview-chapter-nav">
+      <span>Ch 1</span><span>Ch 2</span><span class="active">Ch 3</span>
+      <span>Ch 4</span><span>Ch 5</span>
+    </div>
+    <div class="preview-toc-layout">
+      <div class="preview-toc-sidebar">
+        <div class="toc-heading">This Chapter</div>
+        ${tocItems || '<div class="toc-item">Sections appear here</div>'}
+        <div style="height:12px;border-top:1px solid var(--border);margin-top:8px;padding-top:8px;">
+          <div class="toc-heading">Chapters</div>
+          <div class="toc-item">Ch 1 — Introduction</div>
+          <div class="toc-item">Ch 2 — Foundations</div>
+          <div class="toc-item active">Ch 3 — ${title || 'This Chapter'}</div>
+        </div>
+      </div>
+      <div class="preview-toc-main preview-content">${html}</div>
+    </div>`;
+}
+
+// ── Build site chrome for subject preview ─────────────────────
+function buildSubjectChrome(titleLine, html) {
+  const subjTitle = titleLine || 'New Subject';
+  // Extract chapter list from h3s
+  const chapterMatches = [...html.matchAll(/<h3[^>]*>(.*?)<\/h3>/g)];
+  const chapterItems = chapterMatches.map((m, i) =>
+    `<div class="preview-chapter-item">
+      <span class="ch-num">Ch ${String(i+1).padStart(2,'0')}</span>
+      <span>${m[1].replace(/<[^>]+>/g,'').replace(/^Chapter \d+ — /,'')}</span>
+    </div>`
+  ).join('');
+
+  return `
+    <div class="preview-chrome-header">
+      <span class="preview-chrome-logo">Brainfolds</span>
+      <div class="preview-chrome-nav">
+        <span>Home</span><span class="active">Scholarium</span><span>Learn</span>
+      </div>
+    </div>
+    <div class="preview-breadcrumb">
+      <span>Scholarium</span><span>›</span>
+      <span style="color:var(--text-mid);">${subjTitle}</span>
+    </div>
+    <div class="preview-subject-hero">
+      <div class="eyebrow">Scholarium · New Subject</div>
+      <h2>${subjTitle}</h2>
+      <p>A new subject proposed for Brainfolds</p>
+    </div>
+    ${chapterItems
+      ? `<div class="preview-chapter-list">${chapterItems}</div>`
+      : `<div class="preview-content">${html}</div>`
+    }`;
+}
+
+// ── Main preview update ───────────────────────────────────────
+const editor  = document.getElementById('md-editor');
+const mdCount = document.getElementById('md-char-count');
+
+function updatePreview() {
+  const _previewStart = typeof BFLog !== 'undefined' ? performance.now() : 0;
+  if (!window.marked) return;
+  const md  = editor.value;
+  const frame = document.getElementById('preview-frame');
+  mdCount.textContent = md.length.toLocaleString() + ' chars';
+
+  if (!md.trim()) {
+    frame.innerHTML = '<p class="preview-empty">Start typing to see your preview.</p>';
+    return;
+  }
+
+  // Pre-process shortcodes, then render markdown
+  const processed = processShortcodes(md);
+  marked.setOptions({ gfm: true, breaks: true });
+  const _renderStart = performance.now();
+  let html;
+  try {
+    html = sanitize(marked.parse(processed));
+  } catch(e) {
+    if (typeof BFLog !== 'undefined') BFLog.log('ERROR', 'marked.parse crashed: ' + e.message, {
+      stack: e.stack, mdSnippet: md.slice(0, 200),
+    });
+    html = '<p style="color:#f87171">Preview error — see Logs tab</p>';
+  }
+  if (typeof BFLog !== 'undefined') {
+    const ms = Math.round(performance.now() - _renderStart);
+    if (ms > 200) BFLog.log('WARN', 'preview render slow — ' + ms + 'ms', {
+      ms, mdLength: md.length,
+    });
+  }
+
+  // Extract h1 as title if present
+  const h1match = html.match(/<h1[^>]*>(.*?)<\/h1>/);
+  const title = h1match ? h1match[1].replace(/<[^>]+>/g,'') : '';
+
+  // Inject uploaded image dataUrls so preview shows actual images
+  const htmlWithImages = injectImagesIntoPreview(html);
+
+  if (writingType === 'chapter') {
+    frame.innerHTML = buildChapterChrome(title, htmlWithImages);
+  } else {
+    frame.innerHTML = buildSubjectChrome(title || (md.split('\n')[0] || '').replace(/^#+\s*/,''), htmlWithImages);
+  }
+
+  // Check image paths after each update
+  resolveImagePaths();
+}
+
+editor.addEventListener('input', updatePreview);
+
+// ── Scroll boundary logging for split panes ───────────────────────────────
+// Logs when either pane hits its scroll boundary — the condition that can
+// cause the scroll event to chain to the parent page or iframe parent.
+(function() {
+  var _lastPaneBoundary = 0;
+  function logPaneBoundary(el, name) {
+    el.addEventListener('scroll', function() {
+      if (typeof BFLog === 'undefined') return;
+      var now    = Date.now();
+      var atTop  = el.scrollTop <= 0;
+      var atBot  = el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
+      if ((atTop || atBot) && now - _lastPaneBoundary > 1000) {
+        _lastPaneBoundary = now;
+        BFLog.log('SCROLL', 'contribute: ' + name + ' hit scroll boundary', {
+          boundary:     atTop ? 'top' : 'bottom',
+          pane:         name,
+          scrollTop:    el.scrollTop,
+          scrollHeight: el.scrollHeight,
+          clientHeight: el.clientHeight,
+          inIframe:     window.self !== window.top,
+        });
+      }
+    }, { passive: true });
+  }
+  var ed    = document.getElementById('md-editor');
+  var prev  = document.getElementById('preview-frame');
+  if (ed)   logPaneBoundary(ed,   'md-editor');
+  if (prev) logPaneBoundary(prev, 'preview-frame');
+})();
+
+// Load chapter template on page ready (after marked + KaTeX load)
+function initEditor() {
+  // Wait for marked — required
+  if (!window.marked) { setTimeout(initEditor, 100); return; }
+  // Wait for markedKatex — give it up to 3 seconds, then proceed without it
+  if (!window.markedKatex && !window._katexGaveUp) {
+    if (!window._katexWaitCount) window._katexWaitCount = 0;
+    window._katexWaitCount++;
+    if (window._katexWaitCount < 30) { setTimeout(initEditor, 100); return; }
+    window._katexGaveUp = true; // KaTeX failed to load — proceed without it
+  }
+  // Register KaTeX extension once
+  if (window.markedKatex && !window._katexRegistered) {
+    try {
+      marked.use(markedKatex({ throwOnError: false }));
+      window._katexRegistered = true;
+      if (typeof BFLog !== 'undefined') BFLog.log('INFO', 'katex registered ok');
+    } catch(e) {
+      window._katexRegistered = true;
+      if (typeof BFLog !== 'undefined') BFLog.log('ERROR', 'katex registration failed: ' + e.message, {
+        stack: e.stack,
+      });
+    }
+  }
+  if (window._katexGaveUp && typeof BFLog !== 'undefined') {
+    BFLog.log('WARN', 'katex never loaded — proceeding without LaTeX support', {
+      waited_ms: window._katexWaitCount * 100,
+    });
+  }
+  loadTemplate();
+}
+setTimeout(initEditor, 100);
+
+// ── Char counters ─────────────────────────────────────────────
+function wireCounter(inputId, counterId, max) {
+  const input   = document.getElementById(inputId);
+  const counter = document.getElementById(counterId);
+  if (!input || !counter) return;
+  input.addEventListener('input', () => {
+    const len = input.value.length;
+    counter.textContent = `${len} / ${max}`;
+    counter.className = 'char-count' +
+      (len >= max ? ' over' : len >= max * 0.85 ? ' warn' : '');
+  });
+}
+
+wireCounter('f-title',  'cc-title',  100);
+wireCounter('f-author', 'cc-author',  20);
+wireCounter('f-desc',   'cc-desc',   300);
+wireCounter('f-reason', 'cc-reason', 500);
+
+// ── Drop zone ─────────────────────────────────────────────────
+const dropzone  = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+const loaded    = document.getElementById('dropzone-loaded');
+
+// Known binary magic bytes — first 4 bytes identify file type
+// regardless of extension
+const BINARY_SIGNATURES = [
+  [0xFF, 0xD8, 0xFF],             // JPEG
+  [0x89, 0x50, 0x4E, 0x47],       // PNG
+  [0x47, 0x49, 0x46],             // GIF
+  [0x25, 0x50, 0x44, 0x46],       // PDF
+  [0x50, 0x4B, 0x03, 0x04],       // ZIP / DOCX / XLSX
+  [0x4D, 0x5A],                   // EXE / DLL (MZ header)
+  [0x7F, 0x45, 0x4C, 0x46],       // ELF binary (Linux executables)
+  [0xD0, 0xCF, 0x11, 0xE0],       // MS Office legacy (DOC/XLS/PPT)
+  [0x1F, 0x8B],                   // GZIP
+  [0x42, 0x5A, 0x68],             // BZIP2
+  [0x52, 0x61, 0x72, 0x21],       // RAR
+  [0x00, 0x00, 0x00],             // Null-heavy binary
+];
+
+// Check first N bytes of ArrayBuffer against known signatures
+function hasBinarySignature(buffer) {
+  const bytes = new Uint8Array(buffer, 0, 8);
+  return BINARY_SIGNATURES.some(sig =>
+    sig.every((b, i) => bytes[i] === b)
+  );
+}
+
+// Check if content has high concentration of non-printable characters
+function hasBinaryContent(text) {
+  let nonPrintable = 0;
+  const sample = text.slice(0, 1000);
+  for (let i = 0; i < sample.length; i++) {
+    const code = sample.charCodeAt(i);
+    // Allow: tab(9), newline(10), carriage return(13), printable ASCII(32-126), extended UTF-8(128+)
+    if (code < 9 || (code > 13 && code < 32)) nonPrintable++;
+  }
+  return (nonPrintable / sample.length) > 0.05; // >5% non-printable = binary
+}
+
+const MAX_FILE_SIZE = 500 * 1024; // 500KB — generous for a text chapter
+
+function loadFile(file) {
+  if (!file) return;
+
+  // Layer 1: Extension check
+  if (!file.name.match(/\.(md|markdown|txt)$/i)) {
+    showFileError(`Invalid file type: "${file.name.split('.').pop()}" — please upload a .md or .markdown file.`);
+    return;
+  }
+
+  // Layer 2: File size limit
+  if (file.size > MAX_FILE_SIZE) {
+    showFileError(`File too large: ${(file.size / 1024).toFixed(0)} KB — maximum is 500 KB.`);
+    return;
+  }
+
+  // Layer 3: MIME type check (easily spoofed but worth checking)
+  const allowedMimes = ['text/plain', 'text/markdown', 'text/x-markdown', ''];
+  if (file.type && !allowedMimes.includes(file.type)) {
+    showFileError(`Unexpected file type: "${file.type}" — expected a plain text file.`);
+    return;
+  }
+
+  // Layer 4: Magic bytes check via ArrayBuffer
+  const sliceReader = new FileReader();
+  sliceReader.onload = e => {
+    if (hasBinarySignature(e.target.result)) {
+      showFileError(`File appears to be binary (not a text file) — extension bypass detected. Please upload a genuine .md file.`);
+      return;
+    }
+
+    // Layer 5: Read as text and check for binary content
+    const textReader = new FileReader();
+    textReader.onload = te => {
+      const content = te.target.result;
+
+      if (hasBinaryContent(content)) {
+        showFileError('File contains binary or non-printable characters — not a valid Markdown file.');
+        return;
+      }
+
+      // All checks passed
+      editor.value = content;
+      loaded.textContent = `✓ Loaded: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      loaded.style.display = 'block';
+      dropzone.style.borderColor = '';
+      updatePreview();
+    };
+    textReader.readAsText(file);
+  };
+  sliceReader.readAsArrayBuffer(file.slice(0, 8));
+}
+
+function showFileError(msg) {
+  loaded.textContent = `✗ ${msg}`;
+  loaded.style.display = 'block';
+  loaded.style.color = '#F87171';
+  dropzone.style.borderColor = '#F87171';
+  setTimeout(() => {
+    loaded.style.color = '';
+    dropzone.style.borderColor = '';
+    loaded.style.display = 'none';
+  }, 5000);
+}
+
+dropzone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+
+dropzone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropzone.classList.add('drag-over');
+});
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  loadFile(e.dataTransfer.files[0]);
+});
+
+// ── Submit ────────────────────────────────────────────────────
+async function getIPHash() {
+  try {
+    const res  = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    const enc  = new TextEncoder().encode(data.ip + 'brainfolds-salt-2026');
+    const hash = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(hash))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return 'fallback-' + Math.random().toString(36).slice(2);
+  }
+}
+
+function showMsg(text, type) {
+  const el = document.getElementById('form-msg');
+  el.textContent  = text;
+  el.className    = `form-msg ${type}`;
+}
+
+// ── Contribute form — subject + chapter flow ──────────────────────────────
+
+// ════════════════════════════════════════════════════════════
+// ATTACHMENT HANDLING
+// ════════════════════════════════════════════════════════════
+const ATTACH_LIMITS = {
+  maxFiles:      5,          // max images per submission
+  maxFileBytes:  500 * 1024, // 500 KB per image
+  maxTotalBytes: 2 * 1024 * 1024, // 2 MB total across all images
+  allowedTypes:  ['image/png', 'image/jpeg'],
+  allowedExts:   /\.(png|jpe?g)$/i,
+  // Magic bytes: PNG = 89 50 4E 47, JPEG = FF D8 FF
+  magicBytes: [
+    { sig: [0x89,0x50,0x4E,0x47], type: 'image/png' },
+    { sig: [0xFF,0xD8,0xFF],       type: 'image/jpeg' },
+  ],
+};
+
+let attachedFiles = []; // { file, name, size, dataUrl, error }
+
+const attachZone  = document.getElementById('attach-zone');
+const attachInput = document.getElementById('attach-input');
+const attachList  = document.getElementById('attach-file-list');
+const attachProg  = document.getElementById('attach-progress');
+const attachFill  = document.getElementById('attach-progress-fill');
+const attachTotal = document.getElementById('attach-total');
+
+attachZone.addEventListener('click', () => attachInput.click());
+attachInput.addEventListener('change', e => addAttachments(Array.from(e.target.files)));
+attachZone.addEventListener('dragover', e => { e.preventDefault(); attachZone.classList.add('drag-over'); });
+attachZone.addEventListener('dragleave', () => attachZone.classList.remove('drag-over'));
+attachZone.addEventListener('drop', e => {
+  e.preventDefault();
+  attachZone.classList.remove('drag-over');
+  addAttachments(Array.from(e.dataTransfer.files));
+});
+
+function checkMagicBytes(buf, file) {
+  const b = new Uint8Array(buf);
+  for (const { sig, type } of ATTACH_LIMITS.magicBytes) {
+    if (sig.every((v, i) => b[i] === v)) return type;
+  }
+  return null;
+}
+
+async function validateImage(file) {
+  // Extension check
+  if (!ATTACH_LIMITS.allowedExts.test(file.name)) {
+    return { ok: false, error: `Invalid type — only PNG and JPG accepted` };
+  }
+  // MIME type check
+  if (!ATTACH_LIMITS.allowedTypes.includes(file.type)) {
+    return { ok: false, error: `Invalid MIME type` };
+  }
+  // Size check
+  if (file.size > ATTACH_LIMITS.maxFileBytes) {
+    return { ok: false, error: `Too large (${(file.size/1024).toFixed(0)} KB — max 500 KB)` };
+  }
+  // Magic bytes check — catches renamed files
+  const buf = await file.slice(0, 8).arrayBuffer();
+  const detectedType = checkMagicBytes(buf, file);
+  if (!detectedType) {
+    return { ok: false, error: `File header does not match image format` };
+  }
+  if (detectedType !== file.type && !(detectedType === 'image/jpeg' && file.type === 'image/jpeg')) {
+    return { ok: false, error: `File content does not match extension` };
+  }
+  return { ok: true };
+}
+
+async function addAttachments(files) {
+  for (const file of files) {
+    // Duplicate check
+    if (attachedFiles.some(f => f.name === file.name && f.size === file.size)) continue;
+    
+    // File count limit
+    const validCount = attachedFiles.filter(f => !f.error).length;
+    if (validCount >= ATTACH_LIMITS.maxFiles) {
+      showMsg(`Maximum ${ATTACH_LIMITS.maxFiles} images per submission.`, 'error');
+      break;
+    }
+
+    const validation = await validateImage(file);
+    const entry = { file, name: file.name, size: file.size, dataUrl: null, error: null };
+
+    if (!validation.ok) {
+      entry.error = validation.error;
+      BFLog.logMedia('image-rejected', {
+        filename: file.name, size: file.size,
+        reason: validation.error,
+      });
+      attachedFiles.push(entry);
+      renderAttachList();
+      continue;
+    }
+
+    // Total size check
+    const currentTotal = attachedFiles.filter(f => !f.error).reduce((s, f) => s + f.size, 0);
+    if (currentTotal + file.size > ATTACH_LIMITS.maxTotalBytes) {
+      entry.error = `Adding this would exceed the 2 MB total limit`;
+      attachedFiles.push(entry);
+      renderAttachList();
+      continue;
+    }
+
+    // Read as data URL
+    const dataUrl = await new Promise(resolve => {
+      const r = new FileReader();
+      r.onload = e => resolve(e.target.result);
+      r.readAsDataURL(file);
+    });
+    entry.dataUrl = dataUrl;
+    attachedFiles.push(entry);
+    BFLog.logMedia('image-added', { filename: file.name, size: file.size });
+    renderAttachList();
+    // Note: no auto-insert — user clicks the thumbnail to insert at cursor
+  }
+
+  // Reset input so same file can be re-added after removal
+  attachInput.value = '';
+}
+
+function removeAttachment(idx) {
+  attachedFiles.splice(idx, 1);
+  renderAttachList();
+}
+
+function renderAttachList() {
+  attachList.innerHTML = '';
+  const validFiles = attachedFiles.filter(f => !f.error);
+  const totalBytes = validFiles.reduce((s, f) => s + f.size, 0);
+  const totalKB    = (totalBytes / 1024).toFixed(0);
+  const maxKB      = (ATTACH_LIMITS.maxTotalBytes / 1024).toFixed(0);
+  const pct        = Math.min(100, (totalBytes / ATTACH_LIMITS.maxTotalBytes) * 100);
+
+  if (attachedFiles.length === 0) {
+    attachProg.style.display = 'none';
+    return;
+  }
+
+  attachProg.style.display = 'block';
+  attachFill.style.width = pct + '%';
+  attachTotal.textContent = `${totalKB} KB of ${maxKB} KB used (${validFiles.length} image${validFiles.length !== 1 ? 's' : ''})`;
+  attachTotal.className = 'attach-total' + (pct > 90 ? ' warn' : '') + (pct >= 100 ? ' over' : '');
+
+  // Build current Markdown reference list so we can mark in-use thumbnails
+  const currentMd   = document.getElementById('md-editor')?.value || '';
+  const mdImageRefs = new Set(extractMdImageRefs(currentMd).map(r => basenameOf(r.path)));
+
+  // Thumbnail grid
+  const grid = document.createElement('div');
+  grid.className = 'attach-thumb-grid';
+
+  attachedFiles.forEach((f, i) => {
+    const card = document.createElement('div');
+    const inUse = !f.error && mdImageRefs.has(f.name);
+    card.className = 'attach-thumb-card'
+      + (f.error ? ' attach-error' : '')
+      + (inUse   ? ' in-use'       : '');
+    card.title = f.error
+      ? f.error
+      : (inUse ? `${f.name} — already in chapter · click to insert again` : `${f.name} — click to insert at cursor`);
+
+    if (f.error) {
+      // Error state — show warning icon, no click action
+      card.innerHTML = `
+        <div class="attach-thumb-error-body">⚠</div>
+        <div class="attach-thumb-footer">
+          <span class="attach-thumb-name" title="${f.name}">${f.name}</span>
+        </div>
+        <div style="position:absolute;bottom:24px;left:0;right:0;padding:3px 6px;background:var(--danger-bg);font-family:var(--mono);font-size:0.55rem;color:var(--danger);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.error}</div>
+      `;
+    } else {
+      // Valid image — thumbnail with insert-on-click
+      const sizeStr = (f.size / 1024).toFixed(0) + ' KB';
+      card.innerHTML = `
+        <img class="attach-thumb-img" src="${f.dataUrl}" alt="${f.name}" loading="lazy"/>
+        <div class="attach-thumb-insert-hint">+ Insert</div>
+        <div class="attach-thumb-footer">
+          <span class="attach-thumb-name" title="${f.name}">${f.name}</span>
+          <span class="attach-thumb-size">${sizeStr}</span>
+        </div>
+      `;
+      // Click to insert — the whole card triggers insert
+      card.addEventListener('click', (e) => {
+        if (e.target.classList.contains('attach-thumb-remove')) return;
+        insertImageAtCursor(f.name);
+      });
+    }
+
+    // Remove button (top-right ×)
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'attach-thumb-remove';
+    removeBtn.innerHTML = '×';
+    removeBtn.title = `Remove ${f.name}`;
+    removeBtn.setAttribute('aria-label', `Remove ${f.name}`);
+    removeBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // don't trigger insert
+      removeAttachment(i);
+    });
+    card.appendChild(removeBtn);
+
+    grid.appendChild(card);
+  });
+
+  attachList.appendChild(grid);
+
+  // Re-run image path check and preview refresh whenever attachment list changes
+  resolveImagePaths();
+  updatePreview();
+}
+
+// ── Insert image reference at cursor position in editor ───────────────────
+function insertImageAtCursor(filename) {
+  const ed = document.getElementById('md-editor');
+  if (!ed) return;
+
+  // If filename already referenced in Markdown, jump to it and highlight
+  const existing = ed.value.indexOf(`](${filename})`);
+  if (existing !== -1) {
+    // Find the start of the ![...] block
+    const imgStart = ed.value.lastIndexOf('![', existing);
+    if (imgStart !== -1) {
+      ed.focus();
+      ed.setSelectionRange(imgStart, existing + filename.length + 2);
+      ed.scrollTop = ed.scrollTop; // keep scroll position
+      // Flash the selection — re-select after tiny delay so it's visible
+      setTimeout(() => ed.setSelectionRange(imgStart, existing + filename.length + 2), 50);
+      return;
+    }
+  }
+
+  // Not in Markdown yet — insert at cursor (or end if no selection)
+  ed.focus();
+  const start = ed.selectionStart;
+  const end   = ed.selectionEnd;
+  const before = ed.value.slice(0, start);
+  const after  = ed.value.slice(end);
+
+  // Ensure we start on a new line (unless cursor is already at line start)
+  const needsNewline = start > 0 && ed.value[start - 1] !== '\n';
+  const snippet = (needsNewline ? '\n' : '') + `![Describe what ${filename} shows](${filename})\n`;
+
+  ed.value = before + snippet + after;
+
+  // Position cursor inside the alt text so they can type the description immediately
+  const altStart = before.length + (needsNewline ? 1 : 0) + 2; // after ![
+  const altEnd   = altStart + `Describe what ${filename} shows`.length;
+  ed.setSelectionRange(altStart, altEnd);
+
+  updatePreview();
+  resolveImagePaths();
+}
+
+// Serialise valid attachments for submission
+// Returns base64-encoded JSON of [{name, dataUrl}] or null if no valid files
+function getAttachmentPayload() {
+  const valid = attachedFiles.filter(f => !f.error && f.dataUrl);
+  if (!valid.length) return null;
+  const payload = valid.map(f => ({ name: f.name, data: f.dataUrl }));
+  return btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+}
+
+
+
+// ════════════════════════════════════════════════════════════
+// FULLSCREEN PREVIEW
+// ════════════════════════════════════════════════════════════
+let isFullscreen = false;
+
+function toggleFullscreen() {
+  const pane  = document.getElementById('split-pane');
+  const btn   = document.getElementById('fullscreen-btn');
+  isFullscreen = !isFullscreen;
+  pane.classList.toggle('fullscreen-active', isFullscreen);
+  btn.innerHTML = isFullscreen
+    ? `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="display:block">
+         <path d="M6 1H1v5M1 1l5 5M10 1h5v5M15 1l-5 5M6 15H1v-5M1 15l5-5M10 15h5v-5M15 15l-5-5"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+       </svg> Exit`
+    : `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="display:block">
+         <path d="M1 1h5M1 1v5M15 1h-5M15 1v5M1 15h5M1 15v-5M15 15h-5M15 15v-5"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+       </svg> Fullscreen`;
+  if (isFullscreen) {
+    // Prevent body scroll while fullscreen
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+    // Scroll back to split pane
+    pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// Esc key exits fullscreen
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && isFullscreen) toggleFullscreen();
+});
+
+
+// ════════════════════════════════════════════════════════════
+// SAVE DRAFT
+// ════════════════════════════════════════════════════════════
+// Builds a zip containing:
+//   brainfolds-[slug].md          — the markdown content
+//   brainfolds-[slug]-meta.json   — form field values for restore
+//   images/[filename]             — every uploaded image
+// The zip name is brainfolds-[slug]-draft.zip
+
+function getDraftSlug() {
+  const md = document.getElementById('md-editor').value;
+  const title = document.getElementById('f-title')?.value?.trim();
+  const titleMatch = md.match(/^##\s+(.+)$/m);
+  const raw = title || (titleMatch && titleMatch[1]) || 'chapter-draft';
+  return 'brainfolds-' + raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
+}
+
+function saveDraft() {
+  const md = document.getElementById('md-editor').value;
+  if (!md.trim()) { showMsg('Nothing to save — write something first.', 'error'); return; }
+
+  if (typeof JSZip === 'undefined') {
+    showMsg('JSZip not loaded yet — try again in a moment.', 'error');
+    return;
+  }
+
+  const slug = getDraftSlug();
+  const zip  = new JSZip();
+
+  // Markdown file
+  zip.file(slug + '.md', md);
+
+  // Meta: form field values so they can be restored on load
+  const meta = {
+    writingType: writingType,
+    title:       document.getElementById('f-title')?.value       || '',
+    author:      document.getElementById('f-author')?.value      || '',
+    desc:        document.getElementById('f-desc')?.value        || '',
+    curriculum:  document.getElementById('f-curriculum')?.value  || '',
+    section:     document.getElementById('f-section')?.value     || '',
+    course:      document.getElementById('f-course')?.value      || '',
+  };
+  zip.file(slug + '-meta.json', JSON.stringify(meta, null, 2));
+
+  // Images
+  const imgFolder = zip.folder('images');
+  const valid = attachedFiles.filter(f => !f.error && f.dataUrl);
+  valid.forEach(f => {
+    // dataUrl is "data:image/png;base64,XXXX" — strip the header
+    const base64 = f.dataUrl.split(',')[1];
+    imgFolder.file(f.name, base64, { base64: true });
+  });
+
+  zip.generateAsync({ type: 'blob' }).then(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = slug + '-draft.zip';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    const imgCount = valid.length;
+    BFLog.logDraft('saved', {
+      slug, mdLength: md.length,
+      imageCount: imgCount,
+      zipSizeKB: Math.round(content.length / 1024),
+    });
+    showMsg('Draft saved — ' + slug + '-draft.zip' + (imgCount ? ' (' + imgCount + ' image' + (imgCount > 1 ? 's' : '') + ' included)' : ''), 'success');
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// LOAD DRAFT
+// ════════════════════════════════════════════════════════════
+// Reads a previously saved brainfolds draft zip and restores:
+//   - Markdown content into the editor
+//   - Form field values from the meta JSON
+//   - Images back into attachedFiles
+
+function loadDraft(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = ''; // reset so same file can be re-loaded
+
+  if (typeof JSZip === 'undefined') {
+    showMsg('JSZip not loaded yet — try again in a moment.', 'error');
+    return;
+  }
+
+  JSZip.loadAsync(file).then(zip => {
+    // Find the .md file
+    const mdFile = Object.values(zip.files).find(f => !f.dir && f.name.endsWith('.md'));
+    if (!mdFile) { showMsg('No Markdown file found in zip.', 'error'); return; }
+
+    // Find the meta JSON
+    const metaFile = Object.values(zip.files).find(f => !f.dir && f.name.endsWith('-meta.json'));
+
+    // Find all images
+    const imageFiles = Object.values(zip.files).filter(f =>
+      !f.dir && f.name.startsWith('images/') && f.name !== 'images/'
+    );
+
+    // Load markdown
+    mdFile.async('string').then(md => {
+      const ed = document.getElementById('md-editor');
+      ed.value = md;
+      updatePreview();
+
+      // Restore meta fields
+      if (metaFile) {
+        metaFile.async('string').then(json => {
+          try {
+            const meta = JSON.parse(json);
+            if (meta.writingType) setWritingType(meta.writingType);
+            if (meta.title     && document.getElementById('f-title'))     document.getElementById('f-title').value     = meta.title;
+            if (meta.author    && document.getElementById('f-author'))    document.getElementById('f-author').value    = meta.author;
+            if (meta.desc      && document.getElementById('f-desc'))      document.getElementById('f-desc').value      = meta.desc;
+            if (meta.curriculum && document.getElementById('f-curriculum')) {
+              document.getElementById('f-curriculum').value = meta.curriculum;
+              onCurriculumChange?.();
+            }
+          } catch(e) { /* meta parse failed — not critical */ }
+        });
+      }
+
+      // Restore images
+      if (imageFiles.length) {
+        const imagePromises = imageFiles.map(imgZipFile =>
+          imgZipFile.async('base64').then(b64 => {
+            const name = imgZipFile.name.split('/').pop();
+            const ext  = name.split('.').pop().toLowerCase();
+            const mime = ext === 'png' ? 'image/png' : ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'gif' ? 'image/gif' : ext === 'webp' ? 'image/webp' : 'image/png';
+            const dataUrl = 'data:' + mime + ';base64,' + b64;
+            return { name, dataUrl, size: Math.round(b64.length * 0.75), error: null };
+          })
+        );
+        Promise.all(imagePromises).then(restored => {
+          // Merge with existing — don't duplicate by name
+          restored.forEach(r => {
+            if (!attachedFiles.some(f => f.name === r.name)) {
+              attachedFiles.push(r);
+            }
+          });
+          renderAttachList();
+          resolveImagePaths();
+          BFLog.logDraft('loaded', {
+            mdLength: mdContent.length,
+            imageCount: imageFiles.length,
+          });
+          showMsg('Draft loaded — ' + imageFiles.length + ' image' + (imageFiles.length > 1 ? 's' : '') + ' restored.', 'success');
+        });
+      } else {
+        showMsg('Draft loaded.', 'success');
+      }
+    });
+  }).catch(err => {
+    showMsg('Could not read zip: ' + err.message, 'error');
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// IMAGE PATH RESOLUTION
+// Scans Markdown for ![alt](images/...) references,
+// matches them against uploaded attachedFiles by filename,
+// substitutes dataUrls in the preview so images actually render.
+// Warns about filenames referenced in Markdown but not uploaded.
+// ════════════════════════════════════════════════════════════
+
+// Extract all image paths referenced in Markdown
+function extractMdImageRefs(md) {
+  const refs = [];
+  const re = /!\[([^\]]*?)\]\(([^)]+)\)/g;
+  let m;
+  while ((m = re.exec(md)) !== null) {
+    refs.push({ alt: m[1], path: m[2] });
+  }
+  return refs;
+}
+
+// Given a path like "images/scholarium/t01/c01/ch01/fig01.png"
+// return just the filename "fig01.png"
+function basenameOf(path) {
+  return path.split('/').pop();
+}
+
+// Build a lookup map: filename → dataUrl from attachedFiles
+function buildImageMap() {
+  const map = {};
+  attachedFiles.filter(f => !f.error && f.dataUrl).forEach(f => {
+    map[f.name] = f.dataUrl;
+    // Also index without extension for fuzzy matching
+    map[f.name.replace(/\.[^.]+$/, '')] = f.dataUrl;
+  });
+  return map;
+}
+
+// Detect what curriculum/section/course the contributor is targeting
+// Returns the expected base path e.g. "images/scholarium/t01-foundations/c01-english/chNN/"
+function getExpectedImageBasePath(curriculum, section, course) {
+  if (!curriculum || !section || !course) return null;
+  const chNum = document.getElementById('g-chnum')?.value?.trim() || 'chNN';
+  return `images/${curriculum}/${section}/${course}/${chNum}/`;
+}
+
+// Main function called whenever Markdown changes or images are added/removed
+let _resolvingImagePaths = false; // prevent re-entrant calls
+function resolveImagePaths() {
+  if (_resolvingImagePaths) return;
+  _resolvingImagePaths = true;
+  const md      = document.getElementById('md-editor').value;
+  const imgRefs = extractMdImageRefs(md);
+  const imgMap  = buildImageMap();
+  const warnEl  = document.getElementById('img-path-warn');
+
+  if (!imgRefs.length && !attachedFiles.filter(f => !f.error).length) {
+    warnEl.classList.remove('visible');
+    return;
+  }
+
+  const warnings  = [];
+  const orphans   = []; // uploaded files not referenced in Markdown
+  const missing   = []; // refs in Markdown with no matching upload
+
+  // Get expected path prefix from form fields
+  const curriculum = document.getElementById('f-curriculum').value;
+  const section    = document.getElementById('f-section').value;
+  const course     = document.getElementById('f-course').value;
+  const expectedBase = (curriculum && section && course)
+    ? `images/${curriculum}/${section}/${course}/`
+    : null;
+
+  // Check each Markdown image reference
+  imgRefs.forEach(({ alt, path }) => {
+    const fname    = basenameOf(path);
+    const hasUpload = fname in imgMap;
+    const isBare   = path === fname; // just "fig01.png" — no folder path
+
+    if (!hasUpload) {
+      missing.push({ path, fname });
+    } else if (isBare) {
+      // Bare filename — correct and expected, paths fixed on submit
+      // No warning needed — this is the intended workflow
+    } else if (expectedBase && !path.startsWith(expectedBase)) {
+      // Full path exists but points to the wrong location
+      warnings.push({
+        current: path,
+        correct: expectedBase + fname,
+        fname,
+      });
+    }
+  });
+
+  // Check for uploaded files not referenced in Markdown
+  attachedFiles.filter(f => !f.error).forEach(f => {
+    const referencedInMd = imgRefs.some(r => basenameOf(r.path) === f.name);
+    if (!referencedInMd) orphans.push(f.name);
+  });
+
+  // Build warning message
+  let warnParts = [];
+
+  if (warnings.length) {
+    warnParts.push(
+      `<strong>${warnings.length} image path${warnings.length > 1 ? 's' : ''} will be wrong when published.</strong><br>` +
+      warnings.map(w =>
+        `Change <code>${w.current}</code><br>to <code>${w.correct}</code>`
+      ).join('<br>') +
+      `<br><button class="img-path-fix-btn" onclick="fixImagePaths()">Fix all paths automatically</button>`
+    );
+  }
+
+  if (missing.length) {
+    warnParts.push(
+      `<strong>⚠ ${missing.length} referenced image${missing.length > 1 ? 's' : ''} not uploaded:</strong><br>` +
+      missing.map(m => `<code>${m.fname}</code>`).join(', ') +
+      `<br><span style="font-size:0.62rem;opacity:0.8;">Upload the image${missing.length > 1 ? 's' : ''} in the Images section below before submitting.</span>`
+    );
+  }
+
+  if (orphans.length) {
+    warnParts.push(
+      `<strong>${orphans.length} uploaded image${orphans.length > 1 ? 's' : ''} not used in Markdown:</strong><br>` +
+      orphans.map(n => `<code>${n}</code>`).join(', ')
+    );
+  }
+
+  if (warnParts.length) {
+    warnEl.innerHTML = warnParts.join('<br><br>');
+    warnEl.classList.add('visible');
+    warnEl.classList.toggle('has-missing', missing.length > 0);
+  } else {
+    warnEl.classList.remove('visible');
+    warnEl.classList.remove('has-missing');
+  }
+
+  // Refresh thumbnail in-use indicators to reflect current Markdown
+  if (attachedFiles.length > 0) {
+    const grid = document.querySelector('.attach-thumb-grid');
+    if (grid) {
+      const currentMd   = document.getElementById('md-editor')?.value || '';
+      const mdImageRefs = new Set(extractMdImageRefs(currentMd).map(r => basenameOf(r.path)));
+      grid.querySelectorAll('.attach-thumb-card:not(.attach-error)').forEach((card, i) => {
+        const validFiles = attachedFiles.filter(f => !f.error);
+        if (validFiles[i]) {
+          const inUse = mdImageRefs.has(validFiles[i].name);
+          card.classList.toggle('in-use', inUse);
+        }
+      });
+    }
+  }
+
+  _resolvingImagePaths = false;
+}
+
+// Auto-fix: rewrite image paths in the editor to match expected location
+function fixImagePaths() {
+  const md = document.getElementById('md-editor').value;
+  const imgMap  = buildImageMap();
+
+  const curriculum = document.getElementById('f-curriculum').value;
+  const section    = document.getElementById('f-section').value;
+  const course     = document.getElementById('f-course').value;
+  const chNum      = (document.getElementById('g-chnum')?.value?.trim() || 'chNN');
+
+  if (!curriculum || !section || !course) {
+    showMsg('Select a curriculum, subject, and chapter number first so the correct path can be calculated.', 'error');
+    return;
+  }
+
+  const expectedBase = `images/${curriculum}/${section}/${course}/${chNum}/`;
+
+  // Replace every image path whose filename is in our upload map
+  const fixed = md.replace(/(!\[[^\]]*?\])\(([^)]+)\)/g, (match, altPart, path) => {
+    const fname = basenameOf(path);
+    if (fname in imgMap) {
+      return `${altPart}(${expectedBase}${fname})`;
+    }
+    return match;
+  });
+
+  if (fixed !== md) {
+    document.getElementById('md-editor').value = fixed;
+    updatePreview();
+    resolveImagePaths();
+  }
+}
+
+// Substitute dataUrls into preview HTML so images actually render
+function injectImagesIntoPreview(html) {
+  const imgMap = buildImageMap();
+  if (!Object.keys(imgMap).length) return html;
+
+  return html.replace(/<img([^>]+)src="([^"]+)"([^>]*)>/g, (match, pre, src, post) => {
+    const fname = basenameOf(src);
+    if (fname in imgMap) {
+      return `<img${pre}src="${imgMap[fname]}"${post}>`;
+    }
+    // Image referenced but not uploaded — show placeholder
+    return `<img${pre}src=""${post} style="border:2px dashed var(--warn,#E8A030);padding:20px;display:block;width:100%;box-sizing:border-box;" alt="⚠ Image not uploaded: ${fname}">`;
+  });
+}
+
+// ── Hook resolveImagePaths into events ─────────────────────────
+// Called when Markdown changes
+const _origUpdatePreview = updatePreview;
+// We patch updatePreview after it's defined below to also run resolveImagePaths
+
+
+
+const EXISTING_COURSES = {
+  'scholarium': [
+    {
+      label: 'T01 · English Reading & Writing',
+      section: 't01-foundations', course: 'c01-english-reading-writing',
+      chapters: [
+        'Ch 1 — The Alphabet', 'Ch 2 — Sounds and Letters (Phonics)',
+        'Ch 3 — Building Words (Syllables)', 'Ch 4 — Reading Sentences (Punctuation)',
+        'Ch 5 — Understanding What You Read (Comprehension)', 'Ch 6 — Writing Your First Sentences',
+        'Ch 7 — Spelling Rules and Patterns', 'Ch 8 — Grammar Foundations',
+        'Ch 9 — Building Paragraphs', 'Ch 10 — Writing Clearly (Composition)'
+      ]
+    },
+    {
+      label: 'T01 · Mathematics',
+      section: 't01-foundations', course: 'c02-mathematics',
+      chapters: []
+    },
+    {
+      label: 'T03 · Web Development',
+      section: 't03-technology', course: 'c01-web-development',
+      chapters: []
+    },
+    {
+      label: 'T05 · How to Learn a Language',
+      section: 't05-language-society', course: 'c01-language-learning',
+      chapters: []
+    },
+  ],
+  'self-sufficiency': [
+    {
+      label: 'S01 · Botany Basics',
+      section: 's01-foundation', course: 'c01-botany-basics',
+      chapters: [
+        'Ch 1 — The Plant Cell', 'Ch 2 — Plant Tissues', 'Ch 3 — Roots',
+        'Ch 4 — Stems', 'Ch 5 — Leaves', 'Ch 6 — Flowers',
+        'Ch 7 — Seeds and Fruit', 'Ch 8 — Photosynthesis and Respiration',
+        'Ch 9 — Plant Hormones', 'Ch 10 — Plant Classification'
+      ]
+    },
+    {
+      label: 'S01 · Plant Taxonomy',
+      section: 's01-foundation', course: 'c02-plant-taxonomy',
+      chapters: [
+        'Ch 1 — Binomial Nomenclature', 'Ch 2 — Plant Families',
+        'Ch 3 — Vegetative Identification', 'Ch 4 — Reproductive Identification',
+        'Ch 5 — Dichotomous Keys', 'Ch 6 — Botanical Descriptions',
+        'Ch 7 — Lookalikes', 'Ch 8 — Texas Plant Families',
+        'Ch 9 — Field Guides and Tools', 'Ch 10 — Plant Journal'
+      ]
+    },
+    {
+      label: 'S01 · Soil Science',
+      section: 's01-foundation', course: 'c03-soil-science',
+      chapters: [
+        'Ch 1 — What Is Soil', 'Ch 2 — Soil Texture', 'Ch 3 — Soil Structure',
+        'Ch 4 — Soil pH', 'Ch 5 — Macronutrients', 'Ch 6 — Micronutrients',
+        'Ch 7 — Soil Biology', 'Ch 8 — Mycorrhizal Fungi',
+        'Ch 9 — Water Movement', 'Ch 10 — Texas Soils'
+      ]
+    },
+  ]
+};
+
+let courseType  = 'existing';
+let chapterType = 'new';
+
+function hideFrom(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'none';
+}
+function showEl(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = '';
+}
+
+function hideChapterStep() {
+  hideFrom('chapter-type-row');
+  hideFrom('chapter-new-row');
+  hideFrom('chapter-replace-row');
+  hideFrom('reason-row');
+}
+
+function onCurriculumChange() {
+  const curric = document.getElementById('f-curriculum').value;
+  const sel    = document.getElementById('f-existing-course');
+
+  sel.innerHTML = '<option value="">— select a subject —</option>';
+  document.getElementById('f-section').value = '';
+  document.getElementById('f-course').value  = '';
+  hideChapterStep();
+  hideFrom('course-type-row');
+  hideFrom('existing-course-row');
+  hideFrom('new-subject-row');
+
+  if (!curric) return;
+
+  const courses = EXISTING_COURSES[curric] || [];
+  if (courses.length > 0) {
+    courses.forEach((c, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = c.label;
+      sel.appendChild(opt);
+    });
+    showEl('course-type-row');
+    setCourseType('existing');
+  } else {
+    setCourseType('new');
+  }
+}
+
+function onExistingCourseChange() {
+  const curric  = document.getElementById('f-curriculum').value;
+  const idx     = document.getElementById('f-existing-course').value;
+  const courses = EXISTING_COURSES[curric] || [];
+  hideChapterStep();
+
+  if (idx !== '' && courses[idx]) {
+    document.getElementById('f-section').value = courses[idx].section;
+    document.getElementById('f-course').value  = courses[idx].course;
+    const chapSel = document.getElementById('f-chapter-replace');
+    chapSel.innerHTML = '<option value="">— select a chapter —</option>';
+    courses[idx].chapters.forEach((ch, i) => {
+      const opt = document.createElement('option');
+      opt.value = i + 1;
+      opt.textContent = ch;
+      chapSel.appendChild(opt);
+    });
+    showEl('chapter-type-row');
+    setChapterType('new');
+  } else {
+    document.getElementById('f-section').value = '';
+    document.getElementById('f-course').value  = '';
+  }
+}
+
+function onChapterReplaceChange() {
+  const sel = document.getElementById('f-chapter-replace');
+  const opt = sel.options[sel.selectedIndex];
+  if (opt && opt.value) {
+    // Pre-fill the title field with the chapter name being replaced
+    const titleEl = document.getElementById('f-title');
+    if (titleEl && !titleEl.value) titleEl.value = opt.textContent.replace(/^Ch \d+ — /, '');
+  }
+  showEl('reason-row');
+}
+
+function setCourseType(type) {
+  courseType = type;
+  document.getElementById('btn-existing').classList.toggle('active', type === 'existing');
+  document.getElementById('btn-new').classList.toggle('active', type === 'new');
+
+  hideFrom('existing-course-row');
+  hideFrom('new-subject-row');
+  document.getElementById('f-section').value = '';
+  document.getElementById('f-course').value  = '';
+  hideChapterStep();
+
+  if (type === 'existing') {
+    showEl('existing-course-row');
+    // Restore replace button in case it was hidden by new-subject path
+    const replBtn = document.getElementById('btn-chapter-replace');
+    if (replBtn) replBtn.style.display = '';
+    // Chapter step shown by onExistingCourseChange once a subject is picked
+  } else {
+    showEl('new-subject-row');
+    // New subject: show chapter step immediately, hide replace option
+    const replBtn = document.getElementById('btn-chapter-replace');
+    if (replBtn) replBtn.style.display = 'none';
+    showEl('chapter-type-row');
+    setChapterType('new');
+  }
+}
+
+function setChapterType(type) {
+  chapterType = type;
+  document.getElementById('btn-chapter-new').classList.toggle('active', type === 'new');
+  document.getElementById('btn-chapter-replace').classList.toggle('active', type === 'replace');
+  hideFrom('chapter-new-row');
+  hideFrom('chapter-replace-row');
+  hideFrom('reason-row');
+
+  if (type === 'new') {
+    showEl('chapter-new-row');
+    showEl('reason-row');
+  } else {
+    showEl('chapter-replace-row');
+    // reason-row shown by onChapterReplaceChange once a chapter is picked
+  }
+}
+
+function getSectionValue() {
+  if (courseType === 'existing') return document.getElementById('f-section').value.trim();
+  const name = document.getElementById('f-subject-name') ? document.getElementById('f-subject-name').value.trim() : '';
+  return name; // reviewer assigns the slug
+}
+
+function getCourseValue() {
+  if (courseType === 'existing') return document.getElementById('f-course').value.trim();
+  const name = document.getElementById('f-subject-name') ? document.getElementById('f-subject-name').value.trim() : '';
+  return name;
+}
+
+function getTitleValue() {
+  if (chapterType === 'replace') {
+    const sel = document.getElementById('f-chapter-replace');
+    return sel.options[sel.selectedIndex]
+      ? sel.options[sel.selectedIndex].textContent.replace(/^Ch \d+ — /, '')
+      : '';
+  }
+  return document.getElementById('f-title') ? document.getElementById('f-title').value.trim() : '';
+}
+
+async function submitContent() {
+  const title    = getTitleValue();
+  const author   = document.getElementById('f-author').value.trim();
+  const curric   = document.getElementById('f-curriculum').value;
+  const section  = getSectionValue();
+  const course   = getCourseValue();
+  const desc     = document.getElementById('f-desc').value.trim();
+  const reason   = document.getElementById('f-reason').value.trim();
+  const markdown = editor.value.trim();
+  const replacing = chapterType === 'replace'
+    ? document.getElementById('f-chapter-replace').options[document.getElementById('f-chapter-replace').selectedIndex]?.textContent || ''
+    : '';
+
+  BFLog.logSubmit('started', {
+    title, curric, section, course,
+    mdLength:    markdown.length,
+    imageCount:  attachedFiles.filter(f => !f.error).length,
+    chapterType, replacing: replacing || null,
+  });
+
+  // Validation
+  if (!title)    { BFLog.logSubmit('validation-failed', { field: 'title' }); return showMsg('Please enter a chapter name.', 'error'); }
+  if (!curric)   { BFLog.logSubmit('validation-failed', { field: 'curriculum' }); return showMsg('Please select a curriculum.', 'error'); }
+  if (!section)  { BFLog.logSubmit('validation-failed', { field: 'section' }); return showMsg('Please select or enter a subject.', 'error'); }
+  if (!course)   { BFLog.logSubmit('validation-failed', { field: 'course' }); return showMsg('Please select or enter a subject.', 'error'); }
+  if (!desc)     { BFLog.logSubmit('validation-failed', { field: 'desc' }); return showMsg('Please enter a short description.', 'error'); }
+  if (!reason)   { BFLog.logSubmit('validation-failed', { field: 'reason' }); return showMsg('Please explain why this belongs on Brainfolds.', 'error'); }
+  if (!markdown) { BFLog.logSubmit('validation-failed', { field: 'markdown-empty' }); return showMsg('Please provide your Markdown content.', 'error'); }
+  if (markdown.length < 200) {
+    BFLog.logSubmit('validation-failed', { field: 'markdown-too-short', length: markdown.length });
+    return showMsg('Content seems too short — minimum 200 characters of Markdown.', 'error');
+  }
+  if (markdown.length > 100000) {
+    BFLog.logSubmit('validation-failed', { field: 'markdown-too-long', length: markdown.length });
+    return showMsg('Content is too long — maximum 100,000 characters. Consider splitting into multiple chapters.', 'error');
+  }
+  BFLog.logSubmit('validation-passed', { mdLength: markdown.length });
+
+  // Auto-fix image paths before validating — runs fixImagePaths silently
+  // so bare filenames like (fig01.png) become full paths before submission
+  if (attachedFiles.filter(f => !f.error).length > 0) {
+    const curric  = document.getElementById('f-curriculum').value;
+    const section = document.getElementById('f-section').value;
+    const course  = document.getElementById('f-course').value;
+    if (curric && section && course) {
+      fixImagePaths(); // rewrites editor + markdown silently
+    }
+  }
+
+  // Reject if any attachment errors exist
+  const attachErrors = attachedFiles.filter(f => f.error);
+  if (attachErrors.length > 0)
+    return showMsg('Remove invalid image files before submitting.', 'error');
+
+  // Reject if total attachment size is over limit
+  const attachTotal_ = attachedFiles.filter(f => !f.error).reduce((s, f) => s + f.size, 0);
+  if (attachTotal_ > ATTACH_LIMITS.maxTotalBytes)
+    return showMsg('Images are over the 2 MB total limit. Remove some images.', 'error');
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  try {
+    const db     = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const ipHash = await getIPHash();
+
+    // Rate limit check
+    BFLog.logSubmit('rate-limit-check', { ipHashPrefix: ipHash.slice(0, 8) + '…' });
+    const { data: limited } = await db.rpc('already_submitted', { p_ip_hash: ipHash });
+    if (limited) {
+      BFLog.logSubmit('rate-limited', { ipHashPrefix: ipHash.slice(0, 8) + '…' });
+      showMsg('You have already submitted content today. Please wait 24 hours before submitting again.', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Submit for review';
+      return;
+    }
+    BFLog.logSubmit('rate-limit-passed');
+
+    // Collect valid attachments (base64 encoded JSON of [{name, data}])
+    const attachPayload = getAttachmentPayload();
+    BFLog.logSubmit('images-packaged', {
+      imageCount:   attachedFiles.filter(f => !f.error).length,
+      payloadBytes: attachPayload ? Math.round(attachPayload.length * 0.75) : 0,
+    });
+
+    const insertData = {
+      curriculum:       curric,
+      section_key:      section,
+      course_key:       course,
+      chapter_title:    title,
+      description:      desc,
+      author_name:      author || null,
+      reason:           replacing ? `REPLACING: ${replacing}\n\n${reason}` : reason,
+      markdown_content: markdown,
+      status:           'pending',
+      ip_hash:          ipHash,
+    };
+    if (attachPayload) insertData.attachment_zip = attachPayload;
+
+    BFLog.logSubmit('inserting', { curriculum: curric, section, course, title });
+    const { error } = await db.from('content_submissions').insert(insertData);
+
+    if (error) throw error;
+
+    BFLog.logSubmit('success', { curriculum: curric, section, course, title });
+    showMsg('Submitted — thank you. Your chapter will be reviewed within 48 hours.', 'success');
+
+    // Clear form
+    if(document.getElementById('f-title')) document.getElementById('f-title').value = '';
+    if(document.getElementById('f-author')) document.getElementById('f-author').value = '';
+    document.getElementById('f-curriculum').value = '';
+    document.getElementById('f-section').value  = '';
+    document.getElementById('f-course').value   = '';
+    if(document.getElementById('f-subject-name')) document.getElementById('f-subject-name').value = '';
+    if(document.getElementById('f-chapter-replace')) document.getElementById('f-chapter-replace').selectedIndex = 0;
+    if(document.getElementById('f-existing-course')) document.getElementById('f-existing-course').selectedIndex = 0;
+    // Reset all steps
+    hideFrom('course-type-row'); hideFrom('existing-course-row'); hideFrom('new-subject-row');
+    hideChapterStep();
+    document.getElementById('f-desc').value     = '';
+    document.getElementById('f-reason').value   = '';
+    editor.value = '';
+    loaded.style.display = 'none';
+    attachedFiles = [];
+    renderAttachList();
+    updatePreview();
+
+  } catch (err) {
+    showMsg('Something went wrong. Please try again.', 'error');
+    BFLog.error('contribute', 'Submission failed', err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit for review';
+  }
+}
+</script>
+
+</body>
+</html>

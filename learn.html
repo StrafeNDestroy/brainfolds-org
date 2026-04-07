@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link rel="icon" href="./favicon.ico" sizes="any"/>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="./favicon-32.png"/>
+<link rel="manifest" href="./manifest.json"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#1A1208"/>
+<meta name="robots" content="index, follow"/>
+<meta name="description" content="A complete web development curriculum — from how the internet works to deploying real projects. Every concept illustrated with Brainfolds as a live, real-wor..."/>
+<meta property="og:title" content="Learn Web Development — Brainfolds"/>
+<meta property="og:description" content="A complete web development curriculum built around real projects. No toy examples — every concept is something we actually built."/>
+<meta property="og:url" content="https://brainfolds.org/learn.html"/>
+<meta property="og:site_name" content="Brainfolds"/>
+<meta property="og:type" content="website"/>
+
+<link rel="canonical" href="https://brainfolds.org/learn.html"/>
+<title>Learn Web Development — Brainfolds</title>
+<link rel="preload" href="./assets/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="stylesheet" href="./assets/css/style.css"/>
+<style>
+
+/* ── Page layout ── */
+.learn-wrap { max-width: 900px; margin: 0 auto; padding: 48px 24px 100px; }
+
+/* ── Hero ── */
+.learn-hero { margin-bottom: 48px; }
+.learn-hero h1 { border-bottom: none; padding-bottom: 0; margin-bottom: 12px; }
+.learn-hero p { color: var(--text-mid); font-size: 1rem; max-width: 640px; line-height: 1.75; margin-bottom: 0; }
+
+.learn-tag {
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 12px;
+}
+
+/* ── Philosophy block ── */
+.philosophy {
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 16px 20px; margin-bottom: 40px;
+  font-size: 0.88rem; color: var(--text-mid); line-height: 1.7;
+}
+.philosophy strong { color: var(--text-hi); }
+
+/* ── Phase grid header ── */
+.phases-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+}
+.phases-label {
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.expand-all {
+  font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.08em;
+  color: var(--accent); background: none; border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 5px 12px; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.expand-all:hover { border-color: var(--accent); }
+
+/* ── Phase card ── */
+.phase {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 8px; overflow: hidden; transition: border-color 0.15s;
+}
+.phase:hover { border-color: var(--border-mid); }
+.phase.open { border-color: var(--border-mid); }
+
+/* ── Phase header (toggle) ── */
+.phase-header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; cursor: pointer; background: var(--surface);
+  transition: background 0.12s; user-select: none; list-style: none;
+}
+.phase-header::-webkit-details-marker { display: none; }
+.phase-num {
+  font-family: var(--mono); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.08em; padding: 3px 8px; border-radius: 20px;
+  flex-shrink: 0; white-space: nowrap;
+}
+.phase-title {
+  font-family: var(--sans); font-size: 0.88rem; font-weight: 600;
+  color: var(--text-hi); flex: 1;
+}
+.phase-meta {
+  font-family: var(--mono); font-size: 0.62rem; color: var(--text-muted);
+  white-space: nowrap;
+}
+.phase-arrow {
+  color: var(--text-muted); font-size: 0.7rem; transition: transform 0.2s;
+  flex-shrink: 0;
+}
+details[open] .phase-arrow { transform: rotate(90deg); }
+details[open] .phase-header { background: var(--raised); }
+
+/* ── Phase body ── */
+.phase-body { padding: 0 20px 20px; background: var(--raised); }
+
+/* ── Brainfolds callout inside phase ── */
+.bf-example {
+  background: rgba(196,146,42,0.06); border: 1px solid rgba(196,146,42,0.2);
+  border-radius: var(--radius); padding: 12px 16px; margin: 16px 0;
+  font-size: 0.82rem; color: var(--text-mid); line-height: 1.65;
+}
+.bf-example-label {
+  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 6px;
+}
+.bf-example strong { color: var(--text-hi); }
+
+/* ── Section within a phase ── */
+.topic-section { margin-top: 18px; }
+.topic-section-title {
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+
+/* ── Topic row ── */
+.topic {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 8px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+  transition: background 0.1s; border-radius: 2px;
+}
+.topic:last-child { border-bottom: none; }
+.topic:hover { background: rgba(196,146,42,0.04); }
+.topic:hover .topic-name { color: var(--accent); }
+
+.topic-tag {
+  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.04em;
+  padding: 2px 7px; border-radius: 3px; border: 1px solid; flex-shrink: 0;
+  margin-top: 2px; white-space: nowrap;
+}
+.tag-must   { background: #FCEBEB; color: #A32D2D; border-color: #F09595; }
+.tag-core   { background: rgba(42,28,12,0.6); color: var(--text-mid); border-color: var(--border); }
+.tag-adv    { background: rgba(24,95,165,0.12); color: #60A5FA; border-color: rgba(96,165,250,0.25); }
+.tag-pat    { background: rgba(59,109,17,0.12); color: #6ABF69; border-color: rgba(106,191,105,0.25); }
+.tag-unique { background: rgba(196,146,42,0.12); color: var(--accent); border-color: rgba(196,146,42,0.3); }
+
+.topic-body { flex: 1; min-width: 0; }
+.topic-name {
+  font-size: 0.85rem; color: var(--text-hi); font-weight: 500;
+  margin-bottom: 2px; transition: color 0.1s;
+}
+.topic-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+
+/* ── Hard lessons ── */
+.hard-lessons {
+  margin-top: 20px; background: rgba(212,96,96,0.05);
+  border: 1px solid rgba(212,96,96,0.15); border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.hard-lessons-title {
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--danger); margin-bottom: 10px;
+}
+.hard-lessons ul { padding-left: 1.2rem; margin: 0; }
+.hard-lessons li {
+  font-size: 0.8rem; color: var(--text-mid); line-height: 1.6;
+  margin-bottom: 6px; padding-left: 2px;
+}
+.hard-lessons li:last-child { margin-bottom: 0; }
+
+/* ── Capstone ── */
+.capstone {
+  margin-top: 16px; background: var(--surface);
+  border: 1px solid var(--border-mid); border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.capstone-label {
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
+}
+.capstone p { font-size: 0.82rem; color: var(--text-mid); line-height: 1.6; margin: 0; }
+
+/* ── Tag legend ── */
+.tag-legend {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;
+  align-items: center;
+}
+.tag-legend-label {
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-muted); margin-right: 4px;
+}
+
+/* ── Context block ── */
+.phase-context {
+  font-size: 0.83rem; color: var(--text-mid); line-height: 1.7;
+  font-style: italic; margin-bottom: 16px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+</style>
+<meta name="twitter:card" content="summary_large_image"/>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="./index.html" style="text-decoration:none;"><span class="site-logo">Brainfolds</span></a>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="site-nav-link" href="./self-sufficiency/index.html">Self Sufficiency</a>
+      <a class="site-nav-link" href="./scholarium/index.html">Scholarium</a>
+      <a class="site-nav-link" href="./tools.html">Tools</a>
+      <a class="site-nav-link" href="./contribute.html">Contribute</a>
+      <a class="site-nav-link" href="./donate.html">Donate</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main-content">
+<div class="learn-wrap">
+
+  <div class="learn-hero">
+    <span class="learn-tag">Web Development Curriculum</span>
+    <h1>From zero to shipping real projects</h1>
+    <p>A complete web development curriculum — 20 phases from how the internet works to enterprise architecture. Every concept is illustrated with Brainfolds as a real, live example. Not toy projects. Not contrived exercises. The same decisions you are reading about are the ones that built the site you are reading them on.</p>
+  </div>
+
+  <div class="philosophy">
+    <strong>The philosophy:</strong> understand what you are building, not just how to make it work. Concepts are taught standalone first so you can see them clearly, then applied in context so you know why they exist. Clicking any topic opens a deep-dive explanation. Clicking a capstone opens a step-by-step project guide.
+  </div>
+
+  <div class="tag-legend">
+    <span class="tag-legend-label">Tags:</span>
+    <span class="topic-tag tag-must">must-know</span>
+    <span class="topic-tag tag-core">core</span>
+    <span class="topic-tag tag-adv">advanced</span>
+    <span class="topic-tag tag-pat">pattern</span>
+    <span class="topic-tag tag-unique">unique to this language</span>
+  </div>
+
+  <div class="phases-header">
+    <span class="phases-label">20 phases · click any topic to deep-dive</span>
+    <button class="expand-all" onclick="toggleAll()">Expand all</button>
+  </div>
+
+  <div id="phases-container"></div>
+
+</div>
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p><em>Brainfolds</em> — Free curricula for curious people</p>
+    <p><a href="./donate.html">Support Brainfolds</a> · <a href="./contribute.html">Contribute a chapter</a></p>
+  </div>
+</footer>
+
+<script src="./assets/js/script.js" defer></script>
+<script>
+
+/* ── Curriculum data ── */
+const PHASES = [
+  {
+    num: 1, title: "Networking — how the internet works",
+    badge: { bg: "#CECBF6", color: "#26215C" },
+    bf: "Brainfolds is served from GitHub Pages through Cloudflare to your browser. Every concept in this phase describes something that happens every time someone visits brainfolds.org. The DNS records, the HTTPS certificate, the HTTP request-response cycle, the browser's render pipeline — all of it is live and inspectable right now in DevTools.",
+    sections: {
+      "Fundamentals": [
+        { name: "What is the internet?", desc: "Packets, routers, ISPs, physical infrastructure", tag: "must" },
+        { name: "IP addresses & DNS", desc: "How domain names resolve to servers, A records, TTL, dig and nslookup", tag: "must" },
+        { name: "TCP/IP", desc: "How data travels, packets, acknowledgement, reliability", tag: "must" },
+        { name: "HTTP & HTTPS", desc: "Request/response structure, methods, status codes, headers", tag: "must" },
+        { name: "HTTP/2 & HTTP/3", desc: "Multiplexing, header compression, QUIC over UDP", tag: "core" },
+        { name: "Ports & protocols", desc: "HTTP (80), HTTPS (443), FTP, SSH — what ports actually are", tag: "must" },
+        { name: "Client vs server model", desc: "The foundational mental model for all web development", tag: "must" },
+        { name: "UDP vs TCP", desc: "When UDP is used — video streaming, games, DNS — and why", tag: "core" },
+        { name: "Load balancers & reverse proxies", desc: "What they do, difference between the two, where they sit", tag: "core" },
+      ],
+      "TLS & Certificates": [
+        { name: "TCP three-way handshake", desc: "SYN → SYN-ACK → ACK, why connections are established this way", tag: "must" },
+        { name: "TLS & the TLS handshake", desc: "How HTTPS is secured, cipher negotiation, session keys", tag: "must" },
+        { name: "SSL/TLS certificates", desc: "What certs prove, certificate authorities, chain of trust", tag: "must" },
+        { name: "Public/private key basics", desc: "How asymmetric encryption underpins certificate trust", tag: "core" },
+        { name: "How browsers verify certs", desc: "OCSP, certificate transparency, what the padlock means", tag: "adv" },
+      ],
+      "Browser & Rendering": [
+        { name: "Full browser render pipeline", desc: "DNS → TCP → TLS → HTTP → parse → DOM → CSSOM → render tree → paint", tag: "must" },
+        { name: "Dev tools — network tab", desc: "Reading headers, timing waterfall, inspecting requests", tag: "must" },
+        { name: "HTTP caching properly", desc: "Cache-Control, ETag, If-None-Match, stale-while-revalidate, cache busting", tag: "must" },
+        { name: "Browser security model", desc: "Same-origin policy, iframe sandboxing, mixed content blocking", tag: "must" },
+      ]
+    },
+    hard: [
+      "DNS propagation takes time — changes are not instant and TTL controls how long caches hold old records",
+      "HTTP caching will serve your users stale content after a deployment if you don't have a cache-busting strategy",
+      "The padlock icon does not mean a site is safe — it only means the connection is encrypted",
+      "Most networking bugs look like application bugs until you check the network tab",
+    ],
+    capstone: "Set up a domain, point DNS to a server, configure HTTPS with a real certificate, inspect every step of the connection in DevTools. Brainfolds uses GitHub Pages + Cloudflare — replicate this exact stack."
+  },
+  {
+    num: 2, title: "HTML — structure",
+    badge: { bg: "#FAC775", color: "#633806" },
+    bf: "Every page on Brainfolds is a plain HTML file. Open any chapter page and view source — the structure you see is exactly what this phase covers. The semantic elements, the skip link for accessibility, the meta tags, the Open Graph tags, the canonical link, the defer attribute on scripts. Real HTML, built to real standards, readable without any framework.",
+    sections: {
+      "Core Syntax": [
+        { name: "Document structure", desc: "DOCTYPE, html, head, body, meta charset, viewport", tag: "must" },
+        { name: "Semantic elements", desc: "header, nav, main, section, article, aside, footer", tag: "must" },
+        { name: "Text elements", desc: "h1–h6, p, span, div, strong, em, blockquote, pre, code", tag: "must" },
+        { name: "Links & navigation", desc: "a, href, target, rel noopener, absolute vs relative, hash links", tag: "must" },
+        { name: "Images & media", desc: "img, alt, srcset, picture, video, audio, iframe", tag: "must" },
+        { name: "Forms", desc: "input types, textarea, select, label, button, action, method, name/value", tag: "must" },
+        { name: "Key attributes", desc: "class, id, data-*, hidden, disabled, required, tabindex", tag: "must" },
+        { name: "Accessibility (a11y)", desc: "ARIA roles, aria-label, landmark roles, screen readers, WCAG", tag: "must" },
+        { name: "Head & resources", desc: "link, script, defer/async, meta og/twitter tags, favicon", tag: "core" },
+      ],
+      "Patterns": [
+        { name: "Card component", desc: "Image, title, description, CTA — the most reused UI pattern", tag: "pat" },
+        { name: "Navbar", desc: "Logo left, links center/right, mobile hamburger structure", tag: "pat" },
+        { name: "Modal / dialog", desc: "Overlay, container, close button, focus trap, aria-modal", tag: "pat" },
+        { name: "Hero section", desc: "Full-width bg, headline, subheading, CTA button", tag: "pat" },
+        { name: "Accordion", desc: "Collapsible sections using details/summary elements", tag: "pat" },
+        { name: "Page layout structure", desc: "Sticky header, sidebar, main content, footer — holy grail", tag: "pat" },
+        { name: "Accessibility patterns", desc: "Skip-to-main, visually hidden text, focus trap", tag: "pat" },
+      ]
+    },
+    hard: [
+      "Div soup is tempting and always regretted — semantic elements exist for a reason",
+      "Missing alt text breaks screen readers and costs you SEO",
+      "Forms without proper labels are inaccessible and fail audits",
+      "defer vs async on script tags matters — getting it wrong blocks page rendering",
+    ],
+    capstone: "Build a static page with semantic structure only — no CSS yet. Check it with a screen reader. Every element should make sense read aloud in order."
+  },
+  {
+    num: 3, title: "CSS — style",
+    badge: { bg: "#9FE1CB", color: "#085041" },
+    bf: "Brainfolds uses a single CSS file — style.css — that styles every page on the site. The design system is built entirely from CSS custom properties defined in :root. The Aged Paper theme (warm brown, amber gold) is 20 variable definitions. Change those 20 values and the entire site changes. No framework, no preprocessor, no build step required.",
+    sections: {
+      "Core Syntax": [
+        { name: "Selectors & specificity", desc: "element, .class, #id, :pseudo, ::pseudo, combinators, specificity wars", tag: "must" },
+        { name: "The cascade", desc: "Cascade order, inheritance, !important, specificity calculation", tag: "must" },
+        { name: "Box model", desc: "Content, padding, border, margin, box-sizing: border-box", tag: "must" },
+        { name: "Flexbox", desc: "Container/items, axes, justify-content, align-items, flex-wrap, gap", tag: "must" },
+        { name: "CSS Grid", desc: "grid-template, fr unit, grid-area, auto-fill/fit, named areas", tag: "must" },
+        { name: "Positioning", desc: "Static, relative, absolute, fixed, sticky, z-index, stacking context", tag: "must" },
+        { name: "Responsive design", desc: "Media queries, mobile-first, breakpoints, vw/vh, min/max-width", tag: "must" },
+        { name: "CSS variables", desc: "--custom-props, var(), scope, fallbacks, dark mode theming", tag: "must" },
+        { name: "Transitions & animations", desc: "transition, @keyframes, animation, timing functions, transform", tag: "core" },
+        { name: "CSS functions", desc: "clamp(), min(), max(), calc() — fluid sizing without media queries", tag: "adv" },
+      ],
+      "Layout Patterns": [
+        { name: "Perfect centering", desc: "Vertical + horizontal center — the classic hard problem solved", tag: "pat" },
+        { name: "Responsive card grid", desc: "flex-wrap + flex: 1 1 200px — wrapping cards without media queries", tag: "pat" },
+        { name: "Holy grail layout", desc: "CSS grid: sticky header, sidebar, main content, footer", tag: "pat" },
+        { name: "Full-bleed section", desc: "Full-width background, max-width centered content inside", tag: "pat" },
+        { name: "Dark mode & theming", desc: "prefers-color-scheme, swapping palettes via :root variables", tag: "pat" },
+      ]
+    },
+    hard: [
+      "Specificity wars are a sign your CSS architecture is wrong — not a problem to win",
+      "Flexbox axis confusion (justify vs align swapping when direction changes) trips everyone up for months",
+      "CSS animations on properties other than transform and opacity trigger layout — always use transform",
+      "Mobile-first is not optional — retrofitting responsive design is far harder than starting with it",
+    ],
+    capstone: "Reproduce the Brainfolds design system from scratch — define the token system first, then build the header, a chapter card, and the colour theme switcher. No peeking at the source until the end."
+  },
+  {
+    num: 4, title: "JavaScript — browser behaviour",
+    badge: { bg: "#AFA9EC", color: "#3C3489" },
+    bf: "Brainfolds uses vanilla JavaScript — no framework, no bundler. The script.js file handles the table of contents, quiz interactivity, star ratings, and the review drawer. The reviews JavaScript connects to the database using the browser's native fetch() API. Open DevTools on any chapter page and watch the Network tab — you can see every database call in real time.",
+    sections: {
+      "Core Syntax": [
+        { name: "Variables & scope", desc: "var/let/const, block scope, hoisting, temporal dead zone", tag: "must" },
+        { name: "Functions & closures", desc: "Declarations, expressions, arrow functions, closures, default/rest params", tag: "must" },
+        { name: "Arrays & methods", desc: "map, filter, reduce, find, some, every, flat, spread, destructuring", tag: "must" },
+        { name: "Objects", desc: "Creation, dot/bracket notation, destructuring, spread, Object.keys/values/entries", tag: "must" },
+        { name: "DOM manipulation", desc: "querySelector, createElement, append, remove, innerHTML, textContent", tag: "must" },
+        { name: "Events", desc: "addEventListener, bubbling/capturing, event delegation, preventDefault", tag: "must" },
+        { name: "Async / Promises", desc: "Callbacks, Promises, .then/.catch, async/await, Promise.all", tag: "must" },
+        { name: "Fetch API", desc: "fetch, GET/POST, headers, JSON.parse, response.ok, error handling", tag: "must" },
+        { name: "ES6+ syntax", desc: "Template literals, ?., ??, spread/rest, optional chaining", tag: "must" },
+        { name: "Error handling", desc: "try/catch/finally, Error types, promise rejection", tag: "must" },
+        { name: "Regular expressions", desc: "Metacharacters, groups, lookaheads, greedy vs lazy, validation patterns", tag: "must" },
+        { name: "Modules", desc: "ES modules, import/export, named vs default, dynamic import()", tag: "must" },
+        { name: "Event loop", desc: "Call stack, task queue, microtask queue, why JS is single-threaded", tag: "adv" },
+      ],
+      "Patterns": [
+        { name: "Module pattern", desc: "Encapsulate state, expose a clean public API, avoid global scope", tag: "pat" },
+        { name: "Debounce & throttle", desc: "Controlling function fire rate — search inputs, scroll, resize", tag: "pat" },
+        { name: "Fetch + error handling", desc: "response.ok, network errors, loading/error/success UI states", tag: "pat" },
+      ]
+    },
+    hard: [
+      "Async errors that aren't caught disappear silently — always handle promise rejections",
+      "Type coercion causes bugs that look impossible — use === not ==",
+      "Mutating arrays and objects in place causes subtle bugs — prefer immutable patterns",
+      "The event loop means setTimeout(fn, 0) does not mean immediate — it means after the current stack clears",
+    ],
+    capstone: "Build a reviews system in vanilla JS — fetch reviews from a public API, display them in a drawer, allow star ratings, handle loading and error states, no frameworks."
+  },
+  {
+    num: 5, title: "TypeScript — typed JavaScript",
+    badge: { bg: "#B5D4F4", color: "#0C447C" },
+    bf: "Brainfolds uses plain JavaScript — deliberately, because the site is small enough that types add more friction than they prevent. But the moment a project grows to multiple files and multiple contributors, TypeScript pays for itself immediately. This phase teaches you when to reach for it and what it actually catches.",
+    sections: {
+      "Core": [
+        { name: "Why TypeScript", desc: "What problems it solves, the TypeScript compiler, tsconfig.json, strict mode", tag: "must" },
+        { name: "Basic types", desc: "string, number, boolean, null, undefined, any, unknown, never, void", tag: "must" },
+        { name: "Interfaces & type aliases", desc: "Defining object shapes, interface vs type, extending both", tag: "must" },
+        { name: "Generics", desc: "Writing reusable typed functions and classes, T extends constraint", tag: "must" },
+        { name: "Union & intersection types", desc: "string | number, A & B, discriminated unions for state machines", tag: "must" },
+        { name: "Utility types", desc: "Partial, Required, Pick, Omit, Readonly, Record, ReturnType", tag: "must" },
+        { name: "Type narrowing", desc: "typeof, instanceof, in operator, type guards, assertion functions", tag: "must" },
+      ],
+      "Patterns": [
+        { name: "Typed fetch pattern", desc: "Generic fetch wrapper that returns typed responses", tag: "pat" },
+        { name: "Discriminated union state", desc: "Modeling loading/error/success states as a typed union", tag: "pat" },
+        { name: "Branded types", desc: "Making string types incompatible — UserId vs PostId can't be swapped", tag: "pat" },
+      ]
+    },
+    hard: [
+      "any defeats the entire purpose — use unknown and narrow it instead",
+      "TypeScript does not protect you at runtime — validate external data with Zod or similar",
+      "Strict mode off is false security — always enable strict in tsconfig",
+    ],
+    capstone: "Take the Phase 4 reviews system and rewrite it in TypeScript with strict mode. No any. Every API response typed."
+  },
+  {
+    num: 6, title: "Frontend deep dive",
+    badge: { bg: "#F5C4B3", color: "#712B13" },
+    bf: "Brainfolds is a static site — it scores well on Core Web Vitals because it has no JavaScript framework, self-hosted fonts, compressed images, and deferred scripts. The Lighthouse score is a direct result of the decisions in this phase. Run PageSpeed Insights on brainfolds.org and look at what passes and what the suggestions are.",
+    sections: {
+      "Performance": [
+        { name: "Core Web Vitals", desc: "LCP, INP, CLS — Google's ranking metrics and how to measure them", tag: "must" },
+        { name: "Lighthouse", desc: "Running audits, reading scores, what each category means", tag: "must" },
+        { name: "Lazy loading", desc: "Images, iframes, below-the-fold content, loading='lazy' attribute", tag: "must" },
+        { name: "Font loading", desc: "font-display swap, preloading fonts, FOUT vs FOIT, self-hosting", tag: "core" },
+        { name: "Browser devtools profiler", desc: "Performance profiler, memory profiler, coverage tab", tag: "must" },
+      ],
+      "Frameworks": [
+        { name: "Why frameworks exist", desc: "The problems React/Vue solve — state, reactivity, component model", tag: "must" },
+        { name: "React fundamentals", desc: "Components, JSX, props, state with useState, useEffect, lifting state", tag: "must" },
+        { name: "React hooks", desc: "useState, useEffect, useContext, useRef, useMemo, useCallback, custom hooks", tag: "must" },
+        { name: "Routing in SPAs", desc: "React Router, client-side routing, the history API, SPA index.html fallback", tag: "must" },
+        { name: "Data fetching patterns", desc: "useEffect + fetch, React Query, SWR — caching and synchronization", tag: "must" },
+        { name: "SSR vs CSR vs SSG", desc: "Server-side rendering, client-side rendering, static generation — tradeoffs", tag: "must" },
+      ],
+      "Accessibility Advanced": [
+        { name: "Keyboard navigation testing", desc: "Tab order, focus management, testing without a mouse", tag: "must" },
+        { name: "Color contrast", desc: "WCAG contrast ratios, tools to check, designing for color blindness", tag: "must" },
+      ]
+    },
+    hard: [
+      "useEffect with missing dependencies causes stale closure bugs that are extremely hard to debug",
+      "Re-rendering performance problems only appear at scale — optimize when you measure, not before",
+      "Bundle size matters — adding a 500kb library to save 10 lines of code is a bad trade",
+    ],
+    capstone: "Build a multi-page React app with routing, data fetching from a public API, proper loading/error states, and a Lighthouse score above 90. Then measure what score a similar static HTML version gets."
+  },
+  {
+    num: 7, title: "Node.js & Express — first backend",
+    badge: { bg: "#C0DD97", color: "#27500A" },
+    bf: "Brainfolds has no backend — it is fully static. This phase is where you learn what a backend does and why you might need one. Brainfolds uses Supabase as a managed backend, which means the database rules are written in SQL rather than Node.js code. Once you understand Express, you understand exactly what Supabase is doing on your behalf.",
+    sections: {
+      "Node Fundamentals": [
+        { name: "What is Node.js?", desc: "JS on the server, V8 engine, non-blocking I/O, event loop on the backend", tag: "must" },
+        { name: "npm & package.json", desc: "Installing packages, dependencies vs devDependencies, scripts, lockfiles", tag: "must" },
+        { name: "Core modules", desc: "fs, path, os, http, crypto, stream — built-in without installing anything", tag: "must" },
+        { name: "Environment variables", desc: "process.env, .env files, dotenv — never hardcode secrets", tag: "must" },
+        { name: "Semantic versioning", desc: "major.minor.patch, breaking changes, tilde vs caret in package.json", tag: "must" },
+      ],
+      "Express": [
+        { name: "Express basics", desc: "Creating a server, app.listen, GET and POST routes", tag: "must" },
+        { name: "Routing", desc: "Route params, query strings, express.Router, route files", tag: "must" },
+        { name: "Middleware", desc: "app.use, next(), built-in, custom, order matters", tag: "must" },
+        { name: "Error handling middleware", desc: "4-arg pattern (err,req,res,next), centralized errors, 404 catch-all", tag: "must" },
+      ],
+      "REST API Design": [
+        { name: "What is a REST API?", desc: "Resources, HTTP methods, statelessness, JSON responses", tag: "must" },
+        { name: "URL & route conventions", desc: "Plural nouns, nested resources, /api/v1, query params for filtering", tag: "must" },
+        { name: "Status codes for APIs", desc: "200, 201, 400, 401, 403, 404, 409, 422, 500 — when to use each", tag: "must" },
+        { name: "Input validation", desc: "Never trust client input, Zod/Joi, validate before processing", tag: "must" },
+        { name: "Idempotency", desc: "Making operations safe to retry, why DELETE must be idempotent", tag: "must" },
+      ],
+      "Patterns": [
+        { name: "MVC structure", desc: "Routes, controllers, models — separating concerns into folders", tag: "pat" },
+        { name: "Async route handlers", desc: "Wrapping async functions so errors forward to next()", tag: "pat" },
+        { name: "Repository pattern", desc: "Wrap all DB queries for a resource in one module", tag: "pat" },
+        { name: "Cache-aside pattern", desc: "Check cache → miss → query DB → store in cache → return", tag: "pat" },
+      ]
+    },
+    hard: [
+      "Blocking the event loop with synchronous code kills performance for every concurrent user",
+      "Unhandled promise rejections crash the process in newer Node versions — always handle them",
+      "node_modules should never be committed — it belongs in .gitignore",
+      "The .env file must never be committed — add it to .gitignore before the first commit, not after",
+    ],
+    capstone: "Build a full auth API — registration, login, JWT, protected routes, password reset flow, rate limiting. This is a backend version of what Supabase handles for Brainfolds automatically."
+  },
+  {
+    num: 8, title: "Databases — storing data",
+    badge: { bg: "#F0997B", color: "#4A1B0C" },
+    bf: "Brainfolds uses Supabase — a hosted Postgres database. The reviews table, the content_submissions table, the video_suggestions table — all of it is Postgres. The Row Level Security policies are SQL. The rate limiting functions are SQL. Understanding this phase means you can read and extend the database schema that powers the interactive parts of Brainfolds.",
+    sections: {
+      "SQL": [
+        { name: "Relational DB concepts", desc: "Tables, rows, primary/foreign keys, one-to-many, many-to-many", tag: "must" },
+        { name: "SQL basics", desc: "SELECT, INSERT, UPDATE, DELETE, WHERE, ORDER BY, LIMIT, GROUP BY", tag: "must" },
+        { name: "JOINs", desc: "INNER, LEFT, RIGHT, FULL JOIN — querying across related tables", tag: "must" },
+        { name: "Indexes", desc: "What indexes do, B-tree index, when to add, read vs write tradeoffs", tag: "must" },
+        { name: "Transactions & ACID", desc: "BEGIN/COMMIT/ROLLBACK, atomicity, consistency, isolation, durability", tag: "must" },
+        { name: "Migrations", desc: "Versioning schema changes, up/down migrations, tools", tag: "must" },
+        { name: "SQL injection prevention", desc: "Parameterized queries — never interpolate user input into SQL strings", tag: "must" },
+        { name: "Query performance", desc: "EXPLAIN ANALYZE, N+1 queries, query planning, when indexes help", tag: "must" },
+      ],
+      "Patterns": [
+        { name: "Repository pattern", desc: "All DB queries for a resource in one place — easy to swap or mock", tag: "pat" },
+        { name: "Cursor-based pagination", desc: "Why offset breaks at scale, cursor approach, returning next cursor", tag: "pat" },
+        { name: "Soft delete", desc: "deleted_at timestamp instead of hard delete, filtering in queries", tag: "pat" },
+        { name: "Audit trail", desc: "created_at, updated_at, created_by on every table", tag: "pat" },
+      ]
+    },
+    hard: [
+      "N+1 queries only appear under real load — an ORM that looks fast in dev can destroy production",
+      "Never run migrations on a large table without testing on a copy first — it can lock the table for minutes",
+      "Storing money as float is how you lose people's money — use integer cents or NUMERIC type",
+    ],
+    capstone: "Design a database schema for a site with user reviews, chapter content, and contribution submissions. Write all queries in raw SQL. This is the schema that powers Brainfolds — see how close you get before looking it up."
+  },
+  {
+    num: 9, title: "Security — making it safe",
+    badge: { bg: "#F7C1C1", color: "#791F1F" },
+    bf: "Security was built into Brainfolds from the start, not bolted on after. The Content Security Policy prevents injected scripts from running. Row Level Security means the database credentials in the page source are safe to expose. IP hashing protects reviewer privacy. The _headers file adds X-Frame-Options, HSTS, and X-Content-Type-Options. Every one of these decisions is a direct application of the concepts in this phase.",
+    sections: {
+      "Auth": [
+        { name: "Authn vs authz", desc: "Authentication = who you are, authorization = what you can do", tag: "must" },
+        { name: "Password hashing", desc: "bcrypt, salt rounds, never plain text, timing-safe comparison", tag: "must" },
+        { name: "JWT tokens", desc: "Header/payload/signature, signing with HMAC, access vs refresh tokens", tag: "must" },
+        { name: "Sessions & cookies", desc: "Server-side sessions, HttpOnly, Secure, SameSite flags, vs JWTs", tag: "must" },
+        { name: "Role-based access control", desc: "Roles, permissions, checking in middleware, admin vs user vs guest", tag: "core" },
+      ],
+      "Attacks": [
+        { name: "SQL injection", desc: "How attacks work, parameterized queries, ORMs don't fully protect you", tag: "must" },
+        { name: "XSS attacks", desc: "Stored vs reflected, DOM-based XSS, escaping output, CSP header", tag: "must" },
+        { name: "CSRF attacks", desc: "How it works, CSRF tokens, SameSite cookies, when to worry", tag: "must" },
+        { name: "CORS", desc: "Why browsers enforce it, configuring correctly, wildcards are dangerous", tag: "must" },
+        { name: "Rate limiting", desc: "Brute force, DDoS, token bucket vs sliding window, Redis-backed limiting", tag: "must" },
+        { name: "Security headers", desc: "HSTS, X-Frame-Options, CSP, X-Content-Type-Options", tag: "must" },
+        { name: "Sensitive data exposure", desc: "Encrypting at rest, never logging secrets or PII, data minimization", tag: "must" },
+      ],
+      "Mindset": [
+        { name: "OWASP Top 10", desc: "The ten most critical web app security risks as a framework not a checklist", tag: "must" },
+        { name: "Security mindset", desc: "Assume breach, defense in depth, principle of least privilege", tag: "must" },
+        { name: "Row Level Security (RLS)", desc: "Database-enforced access control — why exposing an anon key is safe when RLS is configured correctly", tag: "must" },
+      ]
+    },
+    hard: [
+      "Security through obscurity is not security — assume attackers can see your source code",
+      "The most common breach vector is a dependency with a known CVE that nobody updated",
+      "Logging request bodies for debugging will eventually log a password — never log sensitive fields",
+      "A wildcard CORS policy on an authenticated API is a vulnerability",
+    ],
+    capstone: "Security audit a web application — find XSS vectors, test rate limiting, check security headers with securityheaders.com, run dependency audit. Document every finding with a severity and a fix."
+  },
+  {
+    num: 10, title: "Deployment & DevOps",
+    badge: { bg: "#85B7EB", color: "#042C53" },
+    bf: "Brainfolds uses GitHub Actions for continuous deployment. Every push to the main branch triggers a workflow that strips private chapters, builds the public output, and pushes it to the public repository. GitHub Pages serves it within 60 seconds. The entire pipeline is defined in a single YAML file. This phase teaches you to build and understand that file.",
+    sections: {
+      "Git": [
+        { name: "Git basics", desc: "init, add, commit, push, pull, clone — daily workflow", tag: "must" },
+        { name: "Branching & merging", desc: "Branches, merging, rebasing, pull requests, feature branch workflow", tag: "must" },
+        { name: ".gitignore", desc: "What to exclude — never commit node_modules, .env, build output", tag: "must" },
+        { name: "Conventional commits", desc: "Commit message format, changelogs, semantic release automation", tag: "core" },
+      ],
+      "CI/CD": [
+        { name: "What CI/CD is", desc: "Continuous integration and deployment — automatic testing and shipping on push", tag: "must" },
+        { name: "GitHub Actions", desc: "Workflow YAML, triggers, steps, jobs, secrets, environment variables", tag: "must" },
+        { name: "Build scripts", desc: "Python/Node scripts that transform source files into deployable output", tag: "must" },
+        { name: "Staging environments", desc: "Dev → staging → production pipeline, QA sign-off, feature flags", tag: "core" },
+      ],
+      "Server Setup": [
+        { name: "Linux CLI", desc: "ls, cd, mkdir, rm, cat, grep, chmod, chown, sudo, pipes, redirection", tag: "must" },
+        { name: "SSH & key pairs", desc: "Generating keys, connecting to servers, SCP, disabling password auth", tag: "must" },
+        { name: "Nginx reverse proxy", desc: "Proxy to Node.js app, serve static files, gzip, basic config", tag: "must" },
+        { name: "Let's Encrypt & Certbot", desc: "Free SSL certs, Nginx integration, auto-renewal", tag: "must" },
+      ],
+      "Patterns": [
+        { name: "Private → public build pattern", desc: "One private source repo, build script strips sensitive content, push clean output to public repo", tag: "pat" },
+        { name: "Secret management in CI", desc: "GitHub Secrets, never hardcode credentials in workflow files", tag: "pat" },
+        { name: "Pre-deploy checklist", desc: "Automated checks that must pass before deploy fires", tag: "pat" },
+      ]
+    },
+    hard: [
+      "Certificates expire — set up monitoring and auto-renewal before you forget they exist",
+      "A deploy without a rollback plan is a liability — always know how to get back to the last working state",
+      "Workflow files that reference secrets by name fail silently if the secret doesn't exist — test end to end",
+    ],
+    capstone: "Build a GitHub Actions workflow that runs on push, executes a build script, verifies the output, and deploys to a public hosting service. Include a safety check that fails the build if any private content is detected in the output."
+  },
+  {
+    num: 11, title: "Cloud fundamentals",
+    badge: { bg: "#B5D4F4", color: "#0C447C" },
+    bf: "Brainfolds uses GitHub Pages (free static hosting), Cloudflare (CDN + security headers + DDoS protection), and Namecheap (domain registration). The whole infrastructure costs nothing per month. Understanding this phase means you can replicate this exact stack, extend it when the site outgrows it, and understand the tradeoffs of each service.",
+    sections: {
+      "Concepts": [
+        { name: "IaaS vs PaaS vs SaaS", desc: "The three service models, what you manage vs what the provider manages", tag: "must" },
+        { name: "Object storage (S3)", desc: "Blobs vs files vs databases, bucket policies, signed URLs, lifecycle rules", tag: "must" },
+        { name: "CDN properly", desc: "Edge nodes, cache-control for CDN, invalidation, what to put on a CDN", tag: "must" },
+        { name: "Serverless functions", desc: "Lambda/Cloudflare Workers, cold starts, stateless design, when serverless wins", tag: "core" },
+        { name: "Managed databases", desc: "When to use managed vs self-hosted, automated backups, Supabase as an example", tag: "core" },
+        { name: "Cloud cost awareness", desc: "Egress costs, storage costs, why cloud bills surprise people", tag: "core" },
+      ],
+      "DNS in Practice": [
+        { name: "DNS record management", desc: "A, CNAME, MX, TXT, NS records — managing real DNS for real domains", tag: "must" },
+        { name: "DNS propagation", desc: "Why changes take time, TTL strategy, testing with dig and dnschecker.org", tag: "core" },
+        { name: "Cloudflare as a proxy", desc: "How the orange cloud works — DNS-only vs proxied, what it enables", tag: "must" },
+      ]
+    },
+    hard: [
+      "Cloud egress costs are invisible until they're enormous — data going OUT costs money",
+      "S3 buckets are public by default in some configurations — always explicitly set ACLs",
+      "A misconfigured security group opening port 22 to 0.0.0.0/0 will be probed within minutes",
+    ],
+    capstone: "Map the complete infrastructure of a site like Brainfolds on paper — domain registrar, nameservers, CDN, hosting, database, certificate authority. Then build that exact stack for a new project from scratch."
+  },
+  {
+    num: 12, title: "Data structures & algorithms",
+    badge: { bg: "#D3D1C7", color: "#2C2C2A" },
+    bf: "The database index that makes review lookups fast is a B-tree. The rate limiting function that prevents spam is a sliding window algorithm. The build script that finds private files scans a tree of directories. These are not academic concepts — they are live in the code that runs Brainfolds right now.",
+    sections: {
+      "Foundations": [
+        { name: "Big O notation", desc: "O(1), O(n), O(log n), O(n²) — reasoning about why code is slow at scale", tag: "must" },
+        { name: "Arrays", desc: "Contiguous memory, O(1) access, O(n) insert/delete, when to use", tag: "must" },
+        { name: "Hash maps", desc: "O(1) lookup, collision handling, when a hash map is the right tool", tag: "must" },
+        { name: "Stacks", desc: "LIFO, call stack mental model, undo systems, expression evaluation", tag: "must" },
+        { name: "Queues", desc: "FIFO, message queues, BFS traversal, event queues", tag: "must" },
+        { name: "Trees", desc: "Binary trees, BST, traversal (in/pre/post order), DOM is a tree", tag: "must" },
+      ],
+      "Algorithms": [
+        { name: "Binary search", desc: "O(log n) search on sorted data, why database indexes use B-trees", tag: "must" },
+        { name: "Sorting algorithms", desc: "Bubble, insertion, merge, quick sort — tradeoffs, when each is used", tag: "must" },
+        { name: "BFS & DFS", desc: "Breadth-first and depth-first traversal, finding paths, tree problems", tag: "must" },
+        { name: "Recursion", desc: "Base case and recursive case, call stack depth, when iterative is better", tag: "must" },
+      ]
+    },
+    hard: [
+      "Premature optimization is the root of all evil — profile first, then optimize",
+      "The right data structure often makes an O(n²) solution into O(n) — think before coding",
+      "Binary search is the answer to more problems than people think — any monotonic function can be binary searched",
+    ],
+    capstone: "Solve 30 LeetCode problems covering arrays, hashmaps, trees, and two-pointer patterns. For each one, identify which real-world scenario in a project like Brainfolds it corresponds to."
+  },
+  {
+    num: 13, title: "Testing — proving it works",
+    badge: { bg: "#ED93B1", color: "#4B1528" },
+    bf: "Brainfolds has a security test suite and a content test suite — both live in build/tests/. They test the database security rules (can anonymous users approve reviews? can they read pending submissions?), the rate limiting, and form validation. Running them before a schema change confirms nothing broke. This phase teaches you to write tests like these from scratch.",
+    sections: {
+      "Concepts": [
+        { name: "Why test", desc: "What tests prevent, the cost of not testing, tests as documentation", tag: "must" },
+        { name: "Unit vs integration vs e2e", desc: "The testing pyramid — what each level tests and how many of each to write", tag: "must" },
+        { name: "What to test and what not to", desc: "Test behavior not implementation, avoid testing framework code", tag: "must" },
+        { name: "Mocking & stubbing", desc: "Replacing dependencies with controlled fakes, when mocking is harmful", tag: "must" },
+        { name: "Test structure (AAA)", desc: "Arrange, Act, Assert — the universal structure of a good test", tag: "must" },
+      ],
+      "JavaScript Testing": [
+        { name: "Jest", desc: "describe, it, expect, beforeEach, afterEach, jest.mock, test doubles", tag: "must" },
+        { name: "Testing async code", desc: "async/await in tests, testing promises, fake timers", tag: "must" },
+        { name: "End-to-end with Playwright", desc: "Browser automation, writing e2e tests, CI integration", tag: "core" },
+      ],
+      "API Testing": [
+        { name: "Testing database security rules", desc: "Verify RLS policies by attempting operations that should be rejected", tag: "pat" },
+        { name: "Testing rate limiting", desc: "Submit enough requests to trigger the limiter, verify rejection", tag: "pat" },
+      ]
+    },
+    hard: [
+      "Tests that test implementation details break on every refactor — test behavior instead",
+      "A test suite that takes 20 minutes to run will be skipped — keep it fast",
+      "Flaky tests erode trust in the whole suite — fix or delete them immediately",
+    ],
+    capstone: "Add a test suite to a project that has none. Write one test for each database security rule, one for each rate limit, and one end-to-end test for the form submission flow."
+  },
+  {
+    num: 14, title: "Go — fast, explicit, production-grade",
+    badge: { bg: "#5DCAA5", color: "#04342C" },
+    context: "Learn after you have built real projects in Node. The concepts are identical — you are learning to express them in a statically typed compiled language. Go forces you to be explicit about everything Node hides from you.",
+    bf: "A Go version of the Brainfolds review API would handle ten times the traffic on a single server, compile to a self-contained binary with no runtime dependencies, and catch every type error at compile time. The architecture would be identical — HTTP handlers, database queries, rate limiting — but the language makes failures explicit rather than silent.",
+    sections: {
+      "Language Fundamentals": [
+        { name: "Go toolchain", desc: "go run, go build, go mod, go test — single binary output, no runtime required", tag: "must" },
+        { name: "Types & variables", desc: "int, string, bool, float64, := short declaration, zero values", tag: "must" },
+        { name: "Structs", desc: "Defining structs, methods on structs, embedding — Go's version of classes", tag: "must" },
+        { name: "Interfaces", desc: "Implicit implementation, the error interface, io.Reader/Writer, duck typing", tag: "must" },
+        { name: "Error handling", desc: "Return error as second value, if err != nil, errors.Is, errors.As, wrapping", tag: "must" },
+        { name: "Goroutines", desc: "go keyword, lightweight threads, what makes Go fast under concurrent load", tag: "unique" },
+        { name: "Channels", desc: "Communicating between goroutines, buffered vs unbuffered, select statement", tag: "unique" },
+        { name: "Context package", desc: "Cancellation, timeouts, passing values — the backbone of Go HTTP handling", tag: "must" },
+      ],
+      "Patterns": [
+        { name: "Handler wrapping middleware", desc: "func(next http.Handler) http.Handler — composing middleware chains", tag: "pat" },
+        { name: "Repository pattern in Go", desc: "Interface-based repositories — easy to mock in tests, easy to swap DB", tag: "pat" },
+        { name: "Graceful shutdown", desc: "os.Signal, context with timeout, drain in-flight requests before exit", tag: "pat" },
+      ]
+    },
+    hard: [
+      "Goroutine leaks are as real as memory leaks — always ensure goroutines can exit",
+      "Context cancellation must be propagated everywhere — ignoring context means your server won't shut down cleanly",
+      "Go interfaces are satisfied implicitly — forgetting to implement a method causes a compile error, not a runtime panic",
+    ],
+    capstone: "Build a review submission API in Go using only the standard library — receive a review, validate it, check rate limits, store it as pending. Compare binary size and memory usage to the Node equivalent."
+  },
+  {
+    num: 15, title: "Java & Spring Boot — enterprise doors open",
+    badge: { bg: "#F5C4B3", color: "#4A1B0C" },
+    context: "Learn after Go. Java verbosity and Spring magic make sense because you already understand what they abstract. This phase opens finance, healthcare, large tech, and Android.",
+    bf: "The Brainfolds contribution form, the review system, the rate limiter — all of these could be built in Spring Boot with three times the code and ten times the enterprise tooling. Understanding Spring means you can work in the codebases where most professional Java development happens.",
+    sections: {
+      "Java Fundamentals": [
+        { name: "JVM & compilation", desc: "javac, JVM, bytecode, JIT warmup, classpath, JAR and WAR files", tag: "must" },
+        { name: "Classes & objects", desc: "Class definition, constructors, instance vs static, access modifiers, final", tag: "must" },
+        { name: "Generics", desc: "List<T>, type safety without casting, bounded type params, wildcards", tag: "must" },
+        { name: "Streams & lambdas", desc: ".stream(), map/filter/collect, method references, Collectors", tag: "must" },
+        { name: "Concurrency", desc: "Thread, ExecutorService, synchronized, volatile, CompletableFuture", tag: "must" },
+      ],
+      "Spring Boot": [
+        { name: "What Spring Boot does", desc: "Auto-configuration, embedded Tomcat, opinionated defaults, starter dependencies", tag: "must" },
+        { name: "Dependency injection", desc: "@Component, @Autowired, @Bean, IoC container — Spring's core concept", tag: "must" },
+        { name: "REST controllers", desc: "@RestController, @GetMapping, @PostMapping, @PathVariable, @RequestBody", tag: "must" },
+        { name: "Spring Data JPA", desc: "@Entity, @Repository, JpaRepository, derived query methods, JPQL", tag: "must" },
+        { name: "Spring Security", desc: "Filter chain, JWT integration, method-level security @PreAuthorize, CORS config", tag: "must" },
+      ],
+      "Patterns": [
+        { name: "Controller-Service-Repository", desc: "Three-layer architecture — the standard Spring app structure everywhere", tag: "pat" },
+        { name: "DTO pattern", desc: "Data Transfer Objects — never expose JPA entities directly from APIs", tag: "pat" },
+        { name: "Global exception handler", desc: "@ControllerAdvice centralizes all error responses in one place", tag: "pat" },
+      ]
+    },
+    hard: [
+      "Spring magic is powerful until it fails silently — learn what it's doing under the hood",
+      "JPA lazy loading throws LazyInitializationException outside a transaction — one of the most common Spring bugs",
+      "The JVM needs warmup — the first requests after startup are slow",
+    ],
+    capstone: "Build the review system in Spring Boot — full Controller-Service-Repository structure, Spring Security JWT, JPA with migrations, comprehensive test suite."
+  },
+  {
+    num: 16, title: "Architecture & system design",
+    badge: { bg: "#AFA9EC", color: "#26215C" },
+    bf: "Brainfolds is deliberately a monolith — one private repo, one public output, one database. The architectural decision was to start simple and extend only when there is a real reason to. This phase teaches you to evaluate that decision, understand when it should change, and how to make the case for or against it.",
+    sections: {
+      "Architectural Decisions": [
+        { name: "Monolith vs microservices", desc: "Start with a monolith — when to split, what microservices cost, distributed system problems", tag: "must" },
+        { name: "Modular monolith", desc: "The best of both worlds — internal modules with clear boundaries, no network overhead", tag: "core" },
+        { name: "Architecture Decision Records", desc: "Documenting why decisions were made — future developers will thank you", tag: "must" },
+      ],
+      "API Design Choices": [
+        { name: "REST vs GraphQL vs gRPC", desc: "When each wins — REST for public APIs, GraphQL for flexible clients, gRPC for internal services", tag: "must" },
+        { name: "API versioning strategies", desc: "URL versioning, header versioning, how to avoid breaking clients", tag: "must" },
+      ],
+      "Distributed Systems": [
+        { name: "CAP theorem", desc: "Consistency, Availability, Partition tolerance — pick two, understand the tradeoff", tag: "must" },
+        { name: "Caching strategies", desc: "Cache-aside, write-through, write-behind, cache invalidation (the hard problem)", tag: "must" },
+      ],
+      "System Design Interviews": [
+        { name: "Interview format", desc: "How to structure 45 minutes, what interviewers evaluate, how to communicate tradeoffs", tag: "must" },
+        { name: "Common design questions", desc: "URL shortener, Twitter feed, rate limiter, file storage, chat system — practice these", tag: "must" },
+        { name: "Scalability patterns", desc: "Horizontal scaling, database sharding, read replicas, CDN, caching layers", tag: "must" },
+      ]
+    },
+    hard: [
+      "Microservices solve an organizational problem more than a technical one — a small team with microservices has all the cost and none of the benefit",
+      "Cache invalidation is genuinely hard — there are only two hard things in CS and this is one of them",
+      "Premature architecture is as harmful as premature optimization — solve the problem you have now",
+    ],
+    capstone: "Design the architecture for a scaled version of Brainfolds — 1 million monthly visitors, user accounts, personalized learning paths. Present it as a 45-minute system design interview."
+  },
+  {
+    num: 17, title: "Design patterns — naming what you already know",
+    badge: { bg: "#FAC775", color: "#412402" },
+    context: "By this point you have seen most of these patterns already. This phase gives them names and formalizes the shapes — so you can recognize them in codebases and communicate about them precisely.",
+    bf: "The Brainfolds build scripts use the Builder pattern to assemble output files. The review drawer uses the Observer pattern to update the star display when ratings change. The middleware chain in Express is the Chain of Responsibility pattern. The private-flag system is a Strategy pattern. These patterns exist in the code — this phase teaches you to see them.",
+    sections: {
+      "Structural": [
+        { name: "Adapter", desc: "Making incompatible interfaces work together — wrapping a third-party library", tag: "must" },
+        { name: "Decorator", desc: "Adding behavior by wrapping — Express middleware IS the decorator pattern", tag: "must" },
+        { name: "Facade", desc: "Simplifying a complex system — hiding the database behind a service layer", tag: "must" },
+      ],
+      "Behavioral": [
+        { name: "Observer", desc: "Subscribe/notify — you built this in JavaScript, React state uses it", tag: "must" },
+        { name: "Strategy", desc: "Swappable algorithms — sorting strategies, payment methods, auth strategies", tag: "must" },
+        { name: "Command", desc: "Encapsulating actions as objects — undo systems, task queues, audit logs", tag: "must" },
+        { name: "Chain of responsibility", desc: "Pass requests along a chain until one handles it — Express middleware is this", tag: "must" },
+        { name: "State machine", desc: "Explicit states and transitions — review status (pending/approved/rejected) is a state machine", tag: "must" },
+      ],
+      "Creational": [
+        { name: "Singleton", desc: "One instance only — when it makes sense (config, connection pool) and when to avoid it", tag: "must" },
+        { name: "Factory method", desc: "Creating objects without specifying the exact class", tag: "must" },
+        { name: "Builder", desc: "Constructing complex objects step by step", tag: "must" },
+      ]
+    },
+    hard: [
+      "Patterns are vocabulary not blueprints — use them when the problem fits, not to show you know them",
+      "Over-engineering with patterns is a real problem — a simple if statement is often better than a Strategy",
+    ],
+    capstone: "Audit a codebase and identify every design pattern used. Name them, explain why they were the right choice, and find one place where a refactor to a better pattern would improve the code."
+  },
+  {
+    num: 18, title: "Professional practice — the human side",
+    badge: { bg: "#B4B2A9", color: "#2C2C2A" },
+    bf: "Building Brainfolds required reading unfamiliar codebases, debugging broken paths, estimating how long a chapter rewrite would take, writing documentation other people could follow, and making decisions about tradeoffs between simplicity and features. None of that was technical skill. All of it was this phase.",
+    sections: {
+      "Engineering Skills": [
+        { name: "Debugging properly", desc: "Breakpoints, watch expressions, call stack inspection, binary search debugging", tag: "must" },
+        { name: "Reading unfamiliar codebases", desc: "Entry point tracing, grep strategies, IDE navigation, building a mental model fast", tag: "must" },
+        { name: "Technical writing", desc: "Good READMEs, runbooks, ADRs, documentation people actually read", tag: "must" },
+        { name: "Code review skills", desc: "What to look for, how to give feedback, how to receive it, PR etiquette", tag: "must" },
+        { name: "Estimating work", desc: "Breaking down tasks, uncertainty ranges, communicating estimates honestly", tag: "must" },
+      ],
+      "Meta Skills": [
+        { name: "Tradeoff thinking", desc: "There is no best solution, only tradeoffs — evaluating speed vs maintainability vs cost", tag: "must" },
+        { name: "Knowing when not to build", desc: "Use a third-party service, buy vs build, the real cost of maintenance", tag: "must" },
+        { name: "Writing for the next developer", desc: "Variable names, function length, comment philosophy — code is read more than written", tag: "must" },
+      ],
+      "Career": [
+        { name: "Building a portfolio", desc: "What a strong GitHub looks like, projects that demonstrate real skills", tag: "must" },
+        { name: "Coding interviews", desc: "What companies actually test, how to communicate while solving, common mistakes", tag: "must" },
+        { name: "Freelancing basics", desc: "Contracts, scoping, pricing, dealing with scope creep, invoicing", tag: "core" },
+      ]
+    },
+    hard: [
+      "Most career-limiting mistakes are communication failures not technical failures",
+      "The developer who ships working code and communicates clearly will outpace the genius who disappears for two weeks",
+      "Nobody knows everything — the skill is knowing how to find out fast",
+    ],
+    capstone: "Build one complete production-ready application of your choice — deployed, secured, monitored, tested, documented, and publicly visible. This is your portfolio piece."
+  },
+  {
+    num: 19, title: "Modern website building — from zero to live",
+    badge: { bg: "#A8C5A0", color: "#1A3D16" },
+    bf: "Brainfolds IS this phase — every item in this section was implemented, debugged, and shipped to a live domain. The SEO setup, the self-hosted fonts, the sitemap, the robots.txt, the manifest.json, the Cloudflare CDN, the custom domain, the design token system. Read this section as a checklist of what was done and why.",
+    sections: {
+      "Page Anatomy": [
+        { name: "Hero section", desc: "The first thing visitors see — headline, subheadline, CTA. Must communicate value in 3 seconds.", tag: "must" },
+        { name: "Navigation / header", desc: "Logo left, nav links, sticky positioning, hamburger on mobile, active states", tag: "must" },
+        { name: "Content sections", desc: "Consistent card grids, prose sections, CTA moments — pacing and hierarchy", tag: "must" },
+        { name: "Footer", desc: "Minimal — business name, key links, copyright. Not a second navigation.", tag: "must" },
+      ],
+      "Design System": [
+        { name: "CSS variables / design tokens", desc: "Define all colors, fonts, spacing in :root. Never hardcode values. One change updates everywhere.", tag: "must" },
+        { name: "Typography scale", desc: "Display font (headings), body font (prose), mono font (labels/tags). Pair fonts that contrast.", tag: "must" },
+        { name: "Self-hosting fonts", desc: "Download WOFF2. @font-face with font-display: swap. Preload critical fonts. Eliminates Google Fonts dependency.", tag: "must" },
+        { name: "color-scheme: dark", desc: "Prevents OS light mode from overriding a dark theme. Set on :root.", tag: "must" },
+      ],
+      "SEO": [
+        { name: "Title and meta description", desc: "Unique on every page. Title 50-60 chars, description 150-160 chars. Primary keyword first.", tag: "must" },
+        { name: "Canonical tag", desc: "Tells Google the official URL. Prevents duplicate content penalties.", tag: "must" },
+        { name: "Open Graph tags", desc: "og:title, og:description, og:url, og:image — controls appearance when shared as a link.", tag: "must" },
+        { name: "robots.txt", desc: "Sits at root. Tells crawlers what to index. Never block CSS or JS files.", tag: "must" },
+        { name: "sitemap.xml", desc: "Lists every page URL. Submit to Google Search Console. Update when adding pages.", tag: "must" },
+        { name: "Schema.org JSON-LD", desc: "Structured data — enables rich results in Google. LearningResource type for educational content.", tag: "must" },
+        { name: "Google Search Console", desc: "Verify ownership via DNS TXT record. Submit sitemap. Monitor indexing and Core Web Vitals.", tag: "must" },
+      ],
+      "Performance": [
+        { name: "Core Web Vitals", desc: "LCP, INP, CLS — Google's ranking metrics. Test with pagespeed.web.dev. Mobile score is what Google uses.", tag: "must" },
+        { name: "Image compression", desc: "Compress all images before uploading. loading='lazy' on all below-fold images.", tag: "must" },
+        { name: "Async/defer scripts", desc: "Never blocking scripts in head. All page scripts use defer.", tag: "must" },
+        { name: "CDN hosting", desc: "Serve static files from edge nodes globally. Cloudflare, Netlify, Vercel — all free for static.", tag: "must" },
+      ],
+      "Hosting & Deployment": [
+        { name: "Static vs dynamic hosting", desc: "HTML/CSS/JS goes on GitHub Pages / Netlify / Vercel (free). Apps with a backend need a server.", tag: "must" },
+        { name: "Custom domain setup", desc: "Buy on registrar. A records → host IP. CNAME record www → platform URL. SSL provisions automatically.", tag: "must" },
+        { name: "DNS propagation", desc: "Changes take 15 minutes to 48 hours. Check at whatsmydns.net. TTL controls cache duration.", tag: "must" },
+        { name: "Build pipeline", desc: "Automated scripts that strip private content, verify output, and push to public host on every commit.", tag: "must" },
+        { name: "Root files checklist", desc: "index.html, favicon.ico, favicon.svg, robots.txt, sitemap.xml, manifest.json must all live at root.", tag: "pat" },
+      ]
+    },
+    hard: [
+      "Google Fonts loading from an external server is the single biggest LCP killer — self-host fonts and your score jumps immediately",
+      "DNS propagation is not instant — set expectations before launching",
+      "The padlock (HTTPS) does not mean a site is safe — it only means the connection is encrypted",
+      "Placeholder text is not a label — every form input needs a visible label or screen readers and mobile autofill both fail",
+    ],
+    capstone: "Build a complete static site from scratch — design token system, self-hosted fonts, semantic HTML, fully responsive, WCAG AA accessible, PageSpeed 90+, deployed with a custom domain, sitemap submitted to Search Console."
+  },
+  {
+    num: 20, title: "Logging & Observability — knowing what your app is doing",
+    badge: { bg: "#C8E6C9", color: "#1B5E20" },
+    context: "Every other phase teaches you how to build things. This phase teaches you how to know they are working. Learn this after you have a real app running — the problems it solves will be familiar.",
+    bf: "Brainfolds has no observability yet — it's a static site with no server to monitor. But the Supabase database has logs, the GitHub Actions workflows have logs, and Cloudflare has analytics. This phase teaches you to build the observability layer you would add if Brainfolds had a Node or Go backend, and to read the logs that already exist in the tools around it.",
+    sections: {
+      "Logging Fundamentals": [
+        { name: "What logging is for", desc: "Bugs in production cannot be reproduced locally. Logs are the audit trail that lets you reconstruct what happened.", tag: "must" },
+        { name: "console.log is not a logging system", desc: "No levels, no structure, no timestamps, no destinations. A debugging tool not a production tool.", tag: "must" },
+        { name: "The three pillars of observability", desc: "Logs (what happened), Metrics (how much/fast), Traces (where time was spent)", tag: "must" },
+        { name: "Log levels", desc: "DEBUG, INFO, WARN, ERROR, FATAL — when each is correct and when to enable each", tag: "must" },
+      ],
+      "Structured Logging": [
+        { name: "Plain text vs structured logs", desc: "JSON logs can be queried, filtered, and alerted on. Plain text cannot at scale.", tag: "must" },
+        { name: "What a good log entry contains", desc: "timestamp, level, message, service, environment, request ID, user ID, duration", tag: "must" },
+        { name: "Correlation IDs", desc: "One ID per request, added to every log entry. Lets you trace one user journey across thousands of lines.", tag: "must" },
+        { name: "What never to log", desc: "Passwords, tokens, PII — field redaction at the logger level, not the call site", tag: "must" },
+        { name: "Pino (Node.js)", desc: "Fastest structured logger for Node. JSON output, low overhead, built-in redaction.", tag: "must" },
+      ],
+      "Metrics & Monitoring": [
+        { name: "The four golden signals", desc: "Latency, Traffic, Errors, Saturation — if you only have four metrics, make them these", tag: "must" },
+        { name: "Prometheus", desc: "Pull-based metrics collection, /metrics endpoint, time-series database, PromQL", tag: "must" },
+        { name: "Percentiles — p50, p95, p99", desc: "Averages hide tail latency. Always look at p95 and p99 not just average.", tag: "must" },
+        { name: "Sentry", desc: "Error tracking — groups exceptions, shows stack traces, tracks which release introduced an error", tag: "must" },
+        { name: "Uptime monitoring", desc: "External checks from outside your infrastructure. Catches when your whole stack is down.", tag: "must" },
+      ],
+      "Patterns": [
+        { name: "Request ID middleware pattern", desc: "Middleware generates or reads X-Request-Id header, injects into all logs for that request", tag: "pat" },
+        { name: "Health check endpoint pattern", desc: "GET /health returns {status, uptime, version, checks: {db, cache}}. Used by load balancers and monitors.", tag: "pat" },
+        { name: "Dashboard-first design", desc: "Before building a feature, design the dashboard that would tell you it is working.", tag: "pat" },
+      ]
+    },
+    hard: [
+      "The production bug you cannot diagnose is always the one where you said logging it would slow things down",
+      "Logging a password field happens once in every codebase — set up redaction at the logger level before writing business logic",
+      "Alert fatigue is a system failure not a people failure — if engineers silence alerts, the alerts are wrong",
+      "Correlation IDs feel unnecessary until you have ten servers and a bug that only happens when two services interact",
+    ],
+    capstone: "Instrument a Node or Go API end to end — structured JSON logging with correlation IDs, Prometheus metrics with custom business counters, Sentry error tracking, uptime monitoring, and a Grafana dashboard showing the four golden signals. Then break something deliberately and diagnose it using only your observability tooling."
+  }
+];
+
+/* ── Tag class map ── */
+const TAG = { must: 'tag-must', core: 'tag-core', adv: 'tag-adv', pat: 'tag-pat', unique: 'tag-unique' };
+const TAG_LABEL = { must: 'must-know', core: 'core', adv: 'advanced', pat: 'pattern', unique: 'unique' };
+
+/* ── Count topics in a phase ── */
+function countTopics(p) {
+  return Object.values(p.sections).reduce((t, s) => t + s.length, 0);
+}
+
+/* ── Build one phase card ── */
+function buildPhase(p, isFirst) {
+  const topicCount = countTopics(p);
+  const sectionCount = Object.keys(p.sections).length;
+
+  let sectionsHTML = '';
+  for (const [title, topics] of Object.entries(p.sections)) {
+    sectionsHTML += `
+      <div class="topic-section">
+        <div class="topic-section-title">${title}</div>
+        ${topics.map(t => `
+          <div class="topic" onclick="deepDive(${JSON.stringify(t.name)}, ${JSON.stringify(t.desc)}, ${p.num})">
+            <span class="topic-tag ${TAG[t.tag]}">${TAG_LABEL[t.tag]}</span>
+            <div class="topic-body">
+              <div class="topic-name">${t.name}</div>
+              <div class="topic-desc">${t.desc}</div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  const contextHTML = p.context ? `<p class="phase-context">${p.context}</p>` : '';
+
+  const bfHTML = p.bf ? `
+    <div class="bf-example">
+      <span class="bf-example-label">Brainfolds — real world example</span>
+      ${p.bf}
+    </div>` : '';
+
+  return `
+  <details class="phase" ${isFirst ? 'open' : ''} id="phase-${p.num}">
+    <summary class="phase-header">
+      <span class="phase-num" style="background:${p.badge.bg};color:${p.badge.color};">
+        ${String(p.num).padStart(2,'0')}
+      </span>
+      <span class="phase-title">${p.title}</span>
+      <span class="phase-meta">${topicCount} topics · ${sectionCount} section${sectionCount !== 1 ? 's' : ''}</span>
+      <span class="phase-arrow">›</span>
+    </summary>
+    <div class="phase-body">
+      ${contextHTML}
+      ${bfHTML}
+      ${sectionsHTML}
+      <div class="hard-lessons">
+        <div class="hard-lessons-title">Hard lessons — things that bite everyone</div>
+        <ul>${p.hard.map(h => `<li>${h}</li>`).join('')}</ul>
+      </div>
+      <div class="capstone">
+        <div class="capstone-label">Capstone project</div>
+        <p>${p.capstone}</p>
+      </div>
+    </div>
+  </details>`;
+}
+
+/* ── Render all phases ── */
+document.getElementById('phases-container').innerHTML =
+  PHASES.map((p, i) => buildPhase(p, i === 0)).join('');
+
+/* ── Toggle all ── */
+let allOpen = false;
+function toggleAll() {
+  allOpen = !allOpen;
+  document.querySelectorAll('.phase').forEach(d => d.open = allOpen);
+  document.querySelector('.expand-all').textContent = allOpen ? 'Collapse all' : 'Expand all';
+}
+
+/* ── Deep dive — sends topic to Claude ── */
+function deepDive(name, desc, phaseNum) {
+  const phase = PHASES[phaseNum - 1];
+  const prompt = `I'm studying the web development curriculum and I want a deep dive on: "${name}" (${desc}).
+
+This is from Phase ${phaseNum}: ${phase.title}.
+
+Please explain this concept by:
+1. Starting with the problem it solves — why does this exist?
+2. Explaining exactly how it works mechanically
+3. Showing a concrete code example
+4. Explaining what breaks when you get this wrong
+5. Connecting it to how Brainfolds (a real static education website) uses or relates to this concept
+
+Teach it as if I've never heard the term before but I'm not afraid of technical detail.`;
+
+  if (typeof sendPrompt === 'function') {
+    sendPrompt(prompt);
+  }
+}
+
+</script>
+</body>
+</html>

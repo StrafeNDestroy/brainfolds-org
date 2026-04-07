@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#1A1208"/>
+<link rel="canonical" href="https://brainfolds.org/404.html"/>
+<meta name="robots" content="noindex"/>
+<title>Page Not Found — Brainfolds</title>
+<meta name="description" content="The page you were looking for could not be found. Return to Brainfolds — free curricula for curious people."/>
+<link rel="icon" href="./favicon.ico" sizes="any"/>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml"/>
+<link rel="preload" href="./assets/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="stylesheet" href="./assets/css/style.css"/>
+<style>
+  .error-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px;
+    background: var(--base);
+  }
+  .error-code {
+    font-family: var(--serif);
+    font-size: clamp(5rem, 20vw, 10rem);
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 8px;
+    opacity: 0.3;
+  }
+  .error-title {
+    font-family: var(--serif);
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 700;
+    color: var(--text-hi);
+    margin-bottom: 16px;
+  }
+  .error-desc {
+    font-size: 1rem;
+    color: var(--text-muted);
+    max-width: 480px;
+    line-height: 1.7;
+    margin-bottom: 36px;
+  }
+  .error-links {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .error-link {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 11px 22px;
+    border-radius: 3px;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .error-link-primary {
+    background: var(--accent);
+    color: var(--base);
+  }
+  .error-link-primary:hover { background: var(--accent-dim); color: var(--text-hi); }
+  .error-link-ghost {
+    border: 1px solid var(--border-mid);
+    color: var(--text-muted);
+  }
+  .error-link-ghost:hover { border-color: var(--accent-dim); color: var(--accent); }
+</style>
+<meta property="og:image" content="https://brainfolds.org/og-image.jpg"/>
+<meta property="og:type" content="website"/>
+<meta name="twitter:card" content="summary_large_image"/>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<div class="error-page">
+  <div class="error-code">404</div>
+  <h1 class="error-title">Page not found</h1>
+  <p class="error-desc">This page doesn't exist or may have moved. Every piece of knowledge is still here — try starting from the home page.</p>
+  <div class="error-links">
+    <a class="error-link error-link-primary" href="./index.html">Back to Brainfolds</a>
+    <a class="error-link error-link-ghost" href="./self-sufficiency/">Self Sufficiency</a>
+    <a class="error-link error-link-ghost" href="./scholarium/">Scholarium</a>
+  </div>
+</div>
+</body>
+</html>

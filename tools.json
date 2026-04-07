@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "last_updated": "2026-03-22",
+    "version": "1.0"
+  },
+  "tools": [
+    {
+      "id": "tool-001",
+      "name": "Hori Hori Garden Knife",
+      "description": "The most versatile hand tool for any grower. Digs, cuts, measures soil depth, and transplants \u2014 one tool that replaces five.",
+      "why": "Every chapter in soil science and growing assumes you can get into the ground. This is how.",
+      "affiliate_url": "https://amzn.to/example-hori-hori",
+      "image_url": "",
+      "price_range": "$30\u201360",
+      "curriculum": "self-sufficiency",
+      "sections": [
+        "s01-foundation",
+        "s03-land-water",
+        "s04-growing"
+      ],
+      "courses": [
+        "c03-soil-science"
+      ],
+      "tags": [
+        "hand-tools",
+        "soil",
+        "digging",
+        "transplanting"
+      ],
+      "active": true
+    },
+    {
+      "id": "tool-002",
+      "name": "LaMotte Soil pH Test Kit",
+      "description": "Accurate soil pH testing without sending samples to a lab. Essential for understanding nutrient availability before you plant.",
+      "why": "Soil pH chapter is meaningless without being able to test your own soil. This kit is what the professionals use.",
+      "affiliate_url": "https://amzn.to/example-lamotte",
+      "image_url": "",
+      "price_range": "$25\u201340",
+      "curriculum": "self-sufficiency",
+      "sections": [
+        "s01-foundation"
+      ],
+      "courses": [
+        "c03-soil-science"
+      ],
+      "tags": [
+        "testing",
+        "soil",
+        "pH",
+        "lab"
+      ],
+      "active": true
+    },
+    {
+      "id": "tool-003",
+      "name": "Field Guide to Texas Trees",
+      "description": "The definitive regional plant identification reference for Central Texas. Covers native and naturalized species with photographs.",
+      "why": "Plant taxonomy requires a good regional field guide. Most national guides miss half the Texas species.",
+      "affiliate_url": "https://amzn.to/example-tx-trees",
+      "image_url": "",
+      "price_range": "$20\u201335",
+      "curriculum": "self-sufficiency",
+      "sections": [
+        "s01-foundation"
+      ],
+      "courses": [
+        "c02-plant-taxonomy"
+      ],
+      "tags": [
+        "books",
+        "identification",
+        "Texas",
+        "field-guide"
+      ],
+      "active": true
+    },
+    {
+      "id": "tool-004",
+      "name": "Echo SRM-225 String Trimmer",
+      "description": "Professional-grade string trimmer suitable for maintaining land and clearing growth around the homestead. Reliable 2-stroke engine, good parts availability.",
+      "why": "Maintaining clear paths, edges, and open areas is essential for a working property. A quality trimmer saves hours of hand work.",
+      "affiliate_url": "",
+      "image_url": "",
+      "price_range": "$200\u2013280",
+      "curriculum": "self-sufficiency",
+      "sections": [],
+      "courses": [],
+      "tags": [
+        "power-tools",
+        "land-maintenance",
+        "clearing"
+      ],
+      "active": true
+    }
+  ]
+}

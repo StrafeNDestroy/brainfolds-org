@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link rel="icon" href="./favicon.ico" sizes="any"/>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="./favicon-32.png"/>
+<link rel="manifest" href="./manifest.json"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#1A1208"/>
+<meta name="robots" content="index, follow"/>
+<meta name="description" content="Support Brainfolds — free education for anyone, anywhere. No ads, no accounts, no paywalls."/>
+<meta property="og:title" content="Support Brainfolds"/>
+<meta property="og:description" content="Free education for anyone, anywhere. Help keep it that way."/>
+<meta property="og:url" content="https://brainfolds.org/donate.html"/>
+<meta property="og:site_name" content="Brainfolds"/>
+<meta property="og:type" content="website"/>
+
+<link rel="canonical" href="https://brainfolds.org/donate.html"/>
+<title>Support Brainfolds — Donate</title>
+<link rel="preload" href="./assets/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="stylesheet" href="./assets/css/style.css"/>
+<style>
+  .donate-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 64px 24px 80px;
+  }
+
+  .donate-hero { margin-bottom: 48px; }
+  .donate-hero h1 { border-bottom: none; padding-bottom: 0; margin-bottom: 16px; }
+  .donate-hero p {
+    font-size: 1rem; color: var(--text-mid); line-height: 1.8; margin-bottom: 14px;
+  }
+
+  /* Stats */
+  .donate-stats {
+    display: flex; gap: 0; margin: 36px 0;
+    border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+  }
+  .donate-stat {
+    flex: 1; padding: 20px 16px; text-align: center;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .donate-stat:last-child { border-right: none; }
+  .stat-num {
+    font-family: var(--serif); font-size: 1.8rem; font-weight: 700;
+    color: var(--accent); display: block; margin-bottom: 4px;
+  }
+  .stat-label {
+    font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
+
+  /* What donations fund */
+  .fund-list {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+    margin-bottom: 40px;
+  }
+  .fund-list h2 {
+    font-size: 0.9rem; margin-bottom: 16px;
+  }
+  .fund-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.88rem; color: var(--text-mid);
+  }
+  .fund-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .fund-icon { color: var(--accent); font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+
+  /* Donation options */
+  .donate-options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 40px; }
+
+  .donate-option {
+    display: flex; align-items: center; gap: 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 24px;
+    text-decoration: none; color: var(--text-hi);
+    transition: all 0.15s;
+  }
+  .donate-option:hover { border-color: var(--accent-dim); background: var(--overlay); }
+  .donate-option.primary { border-color: var(--accent-dim); }
+
+  .option-icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(196,146,42,0.12); border: 1px solid rgba(196,146,42,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; flex-shrink: 0;
+  }
+  .option-body { flex: 1; }
+  .option-name {
+    font-family: var(--serif); font-size: 1rem; font-weight: 700;
+    color: var(--text-hi); margin-bottom: 3px;
+  }
+  .option-desc { font-size: 0.8rem; color: var(--text-muted); }
+  .option-badge {
+    font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em;
+    text-transform: uppercase; background: rgba(196,146,42,0.12);
+    border: 1px solid rgba(196,146,42,0.25); color: var(--accent);
+    padding: 3px 8px; border-radius: 20px; white-space: nowrap;
+  }
+  .option-arrow { color: var(--accent); font-size: 1rem; flex-shrink: 0; }
+
+  /* No pressure note */
+  .no-pressure {
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.06em;
+    color: var(--text-muted); text-align: center; line-height: 1.7;
+    border-top: 1px solid var(--border); padding-top: 28px;
+  }
+  .no-pressure strong { color: var(--text-hi); }
+
+  @media (max-width: 480px) {
+    .donate-stats { flex-direction: column; }
+    .donate-stat { border-right: none; border-bottom: 1px solid var(--border); }
+    .donate-stat:last-child { border-bottom: none; }
+  }
+</style>
+<meta property="og:image" content="https://brainfolds.org/og-image.jpg"/>
+<meta name="twitter:card" content="summary_large_image"/>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="./index.html" style="text-decoration:none;"><span class="site-logo">Brainfolds</span></a>
+    <nav class="site-nav">
+      <a class="site-nav-link" href="./self-sufficiency/index.html">Self Sufficiency</a>
+      <a class="site-nav-link" href="./scholarium/index.html">Scholarium</a>
+      <a class="site-nav-link" href="./tools.html">Tools</a>
+      <a class="site-nav-link" href="./contribute.html">Contribute</a>
+      <a class="site-nav-link site-nav-active" href="./donate.html">Donate</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main-content">
+<div class="donate-wrap">
+
+  <div class="donate-hero">
+    <h1>Keep it free</h1>
+    <p>Brainfolds has no ads, no accounts, no paywalls, and no tracking. Every chapter is free to read, download, and share — forever.</p>
+    <p>Building and maintaining this takes time. If Brainfolds has been useful to you, supporting it helps ensure it stays available to everyone — including people who could never afford to pay.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="donate-stats">
+    <div class="donate-stat">
+      <span class="stat-num">92+</span>
+      <span class="stat-label">Subjects</span>
+    </div>
+    <div class="donate-stat">
+      <span class="stat-num">1,000+</span>
+      <span class="stat-label">Chapters</span>
+    </div>
+    <div class="donate-stat">
+      <span class="stat-num">$0</span>
+      <span class="stat-label">To access</span>
+    </div>
+  </div>
+
+  <!-- What donations fund -->
+  <div class="fund-list">
+    <h2>What your support funds</h2>
+    <div class="fund-item">
+      <span class="fund-icon">✦</span>
+      <span>Writing new chapters and expanding empty sections (Ecology, Land &amp; Water, Animal Husbandry)</span>
+    </div>
+    <div class="fund-item">
+      <span class="fund-icon">✦</span>
+      <span>Commissioning original diagrams and illustrations to replace placeholders</span>
+    </div>
+    <div class="fund-item">
+      <span class="fund-icon">✦</span>
+      <span>Domain and infrastructure costs (brainfolds.org, Supabase, hosting)</span>
+    </div>
+    <div class="fund-item">
+      <span class="fund-icon">✦</span>
+      <span>Time spent reviewing community submissions and maintaining content quality</span>
+    </div>
+  </div>
+
+  <!-- Donation options -->
+  <div class="donate-options">
+
+    <a class="donate-option primary" href="https://github.com/sponsors/YOUR-GITHUB-USERNAME" target="_blank" rel="noopener">
+      <div class="option-icon">★</div>
+      <div class="option-body">
+        <div class="option-name">GitHub Sponsors</div>
+        <div class="option-desc">Monthly or one-time. No fees beyond payment processing. Directly supports the person building this.</div>
+      </div>
+      <div class="option-badge">Recommended</div>
+      <div class="option-arrow">→</div>
+    </a>
+
+    <!-- Ko-fi placeholder — easy to add later, no account needed to display -->
+    <div class="donate-option" style="opacity:0.5;cursor:default;">
+      <div class="option-icon">☕</div>
+      <div class="option-body">
+        <div class="option-name">Ko-fi</div>
+        <div class="option-desc">One-time donations, no account required. Coming soon.</div>
+      </div>
+      <div class="option-badge">Coming soon</div>
+    </div>
+
+  </div>
+
+  <div class="no-pressure">
+    <strong>No pressure.</strong> Brainfolds will always be free.<br/>
+    If you can't donate, share it with someone who would learn from it.<br/>
+    That matters just as much.
+  </div>
+
+</div>
+</main>
+
+<footer>
+  <p><em>Brainfolds</em> — Free curricula for curious people</p>
+  <p style="margin-top:6px;">
+    <a href="./tools.html" style="color:var(--accent);text-decoration:none;">Tools &amp; Resources</a>
+    &nbsp;·&nbsp;
+    <a href="./contribute.html" style="color:var(--accent);text-decoration:none;">Contribute a chapter</a>
+  </p>
+</footer>
+
+<script src="./assets/js/brainfolds-logger.js"></script>
+<script src="./assets/js/script.js" defer></script>
+</body>
+</html>

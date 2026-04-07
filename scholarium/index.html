@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link rel="icon" href="../favicon.ico" sizes="any"/>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="../favicon-32.png"/>
+<link rel="manifest" href="../manifest.json"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#1A1208"/>
+<meta name="robots" content="index, follow"/>
+<meta name="description" content="Scholarium — a complete liberal education, free and in order. Pure foundations, sciences, technology, engineering, and language."/>
+<meta property="og:title" content="Scholarium — Brainfolds"/>
+<meta property="og:description" content="A complete liberal education across 5 tiers — foundations to mastery. Free, sequenced, and open."/>
+<meta property="og:url" content="https://brainfolds.org/scholarium/"/>
+<meta property="og:site_name" content="Brainfolds"/>
+<meta property="og:type" content="website"/>
+
+<link rel="canonical" href="https://brainfolds.org/scholarium/"/>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"CollectionPage","name":"Scholarium","description":"A complete liberal education — 5 tiers from pure foundations to language and society.","url":"https://brainfolds.org/scholarium/","isAccessibleForFree":true,"provider":{"@type":"Organization","name":"Brainfolds","url":"https://brainfolds.org"}}
+</script>
+<link rel="preload" href="../assets/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin/>
+<link rel="stylesheet" href="../assets/css/style.css"/>
+<style>
+.schol-wrap { max-width: 820px; margin: 0 auto; padding: 48px 24px 100px; }
+.schol-eyebrow { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 14px; }
+.schol-intro { font-size: 1rem; color: var(--text-mid); line-height: 1.8; margin-bottom: 48px; max-width: 620px; }
+
+/* Tier blocks */
+.tier { margin-bottom: 10px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.tier-header { display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: var(--surface); cursor: pointer; user-select: none; }
+.tier-header::-webkit-details-marker { display: none; }
+.tier-num { font-family: var(--mono); font-size: 0.72rem; font-weight: 700; color: var(--accent); width: 20px; flex-shrink: 0; }
+.tier-name { font-size: 0.92rem; font-weight: 600; color: var(--text-hi); flex: 1; }
+.tier-status { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 20px; flex-shrink: 0; }
+.status-live { background: rgba(106,191,105,0.12); border: 1px solid rgba(106,191,105,0.25); color: #6ABF69; }
+.status-building { background: rgba(196,146,42,0.1); border: 1px solid rgba(196,146,42,0.2); color: var(--accent); }
+.status-planned { background: var(--raised); border: 1px solid var(--border); color: var(--text-muted); }
+.tier-arrow { color: var(--text-muted); font-size: 0.7rem; transition: transform 0.2s; flex-shrink: 0; }
+details[open] .tier-arrow { transform: rotate(90deg); }
+details[open] .tier-header { background: var(--raised); }
+
+/* Tier body */
+.tier-body { padding: 4px 20px 20px; background: var(--raised); }
+
+/* Course cards */
+.courses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-top: 16px; }
+.course-card { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); text-decoration: none; transition: border-color 0.15s; }
+.course-card:hover { border-color: var(--accent-dim); }
+.course-card.coming { opacity: 0.55; cursor: default; pointer-events: none; }
+.course-card-title { font-size: 0.9rem; font-weight: 600; color: var(--text-hi); }
+.course-card-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+.course-card-meta { font-family: var(--mono); font-size: 0.6rem; color: var(--accent); letter-spacing: 0.06em; margin-top: 2px; }
+.course-card-meta.coming-meta { color: var(--text-muted); }
+
+/* Contribute callout */
+.contribute-box { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; padding: 18px 20px; margin-top: 48px; font-size: 0.88rem; color: var(--text-mid); line-height: 1.7; }
+.contribute-box strong { color: var(--text-hi); }
+.contribute-box a { color: var(--accent); text-decoration: none; }
+.contribute-box a:hover { color: var(--accent-glow); }
+</style>
+<title>Scholarium — Brainfolds</title>
+<meta property="og:image" content="https://brainfolds.org/og-image.jpg"/>
+<meta name="twitter:card" content="summary_large_image"/>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="../index.html" style="text-decoration:none;"><span class="site-logo">Brainfolds</span></a>
+    <nav class="site-nav">
+      <a class="site-nav-link" href="../index.html">Home</a>
+      <a class="site-nav-link" href="../self-sufficiency/index.html">Self Sufficiency</a>
+      <a class="site-nav-link site-nav-active" href="../scholarium/index.html">Scholarium</a>
+      <a class="site-nav-link" href="../tools.html">Tools</a>
+      <a class="site-nav-link" href="../contribute.html">Contribute</a>
+      <a class="site-nav-link" href="../donate.html">Donate</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main-content">
+<div class="schol-wrap">
+
+  <span class="schol-eyebrow">Curriculum Two</span>
+  <h1>Scholarium</h1>
+  <p class="schol-intro">A complete liberal education — five tiers sequenced from pure foundations to applied mastery. Not a collection of videos or isolated topics. A real curriculum, ordered by dependency: you cannot build a house from the roof down. Courses marked Live are open to read now. Courses marked Building are in progress. Everything is free, always.</p>
+
+  <!-- ── TIER I ── -->
+  <details class="tier" open>
+    <summary class="tier-header">
+      <span class="tier-num">I</span>
+      <span class="tier-name">Pure Foundations</span>
+      <span class="tier-status status-live">Live</span>
+      <span class="tier-arrow">›</span>
+    </summary>
+    <div class="tier-body">
+      <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:4px;">The skills every other tier depends on. Language, number, logic, and the shape of the world.</p>
+      <div class="courses-grid">
+        <a class="course-card" href="t01-foundations/c01-english-reading-writing/index.html">
+          <span class="course-card-title">English Reading & Writing</span>
+          <span class="course-card-desc">From the alphabet through composition — phonics, comprehension, grammar, and clear writing.</span>
+          <span class="course-card-meta">10 chapters · Live</span>
+        </a>
+        <div class="course-card coming">
+          <span class="course-card-title">Mathematics</span>
+          <span class="course-card-desc">Arithmetic, fractions, algebra — number sense before formulas.</span>
+          <span class="course-card-meta coming-meta">In development</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Logic & Critical Thinking</span>
+          <span class="course-card-desc">Arguments, fallacies, inference — how to think clearly about any subject.</span>
+          <span class="course-card-meta coming-meta">In development</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">History</span>
+          <span class="course-card-desc">Not a list of dates — the forces that shaped the world you live in.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Geography</span>
+          <span class="course-card-desc">How the physical world is arranged and why it matters.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── TIER II ── -->
+  <details class="tier">
+    <summary class="tier-header">
+      <span class="tier-num">II</span>
+      <span class="tier-name">Natural Sciences</span>
+      <span class="tier-status status-building">Building</span>
+      <span class="tier-arrow">›</span>
+    </summary>
+    <div class="tier-body">
+      <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:4px;">How the physical world works — from particles to planets, from cells to ecosystems.</p>
+      <div class="courses-grid">
+        <div class="course-card coming">
+          <span class="course-card-title">Physics</span>
+          <span class="course-card-desc">Forces, motion, energy, and the laws that govern everything.</span>
+          <span class="course-card-meta coming-meta">In development</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Chemistry</span>
+          <span class="course-card-desc">Matter, reactions, and the periodic table — what everything is made of.</span>
+          <span class="course-card-meta coming-meta">In development</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Biology</span>
+          <span class="course-card-desc">Cells, systems, evolution — the science of living things.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Earth Science</span>
+          <span class="course-card-desc">Geology, climate, and the systems that shape the planet's surface.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Astronomy</span>
+          <span class="course-card-desc">The solar system, stars, and the scale of the universe.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── TIER III ── -->
+  <details class="tier">
+    <summary class="tier-header">
+      <span class="tier-num">III</span>
+      <span class="tier-name">Technology</span>
+      <span class="tier-status status-live">Live</span>
+      <span class="tier-arrow">›</span>
+    </summary>
+    <div class="tier-body">
+      <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:4px;">How computers and networks work — from foundations to building and deploying real things.</p>
+      <div class="courses-grid">
+        <a class="course-card" href="t03-technology/c01-web-development/index.html">
+          <span class="course-card-title">Web Development</span>
+          <span class="course-card-desc">A complete A-Z curriculum — networking, HTML, CSS, JavaScript, databases, security, and deployment. Every concept illustrated with Brainfolds as a live example.</span>
+          <span class="course-card-meta">20 phases · Live</span>
+        </a>
+        <div class="course-card coming">
+          <span class="course-card-title">Computing Foundations</span>
+          <span class="course-card-desc">How computers work at the hardware level — binary, memory, CPU, operating systems.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Data & Databases</span>
+          <span class="course-card-desc">How data is stored, queried, and used — SQL, relational thinking, and data modelling.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Networks & Security</span>
+          <span class="course-card-desc">How the internet really works and how to keep systems safe on it.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── TIER IV ── -->
+  <details class="tier">
+    <summary class="tier-header">
+      <span class="tier-num">IV</span>
+      <span class="tier-name">Applied Engineering</span>
+      <span class="tier-status status-planned">Planned</span>
+      <span class="tier-arrow">›</span>
+    </summary>
+    <div class="tier-body">
+      <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:4px;">Applying science and mathematics to build things that work in the physical world.</p>
+      <div class="courses-grid">
+        <div class="course-card coming">
+          <span class="course-card-title">Electrical Principles</span>
+          <span class="course-card-desc">Circuits, current, voltage, and the fundamentals of electrical systems.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Mechanical Principles</span>
+          <span class="course-card-desc">Forces, structures, mechanisms — how physical systems are designed and built.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Civil Engineering Basics</span>
+          <span class="course-card-desc">Structures, materials, and infrastructure — how the built environment holds together.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Systems Thinking</span>
+          <span class="course-card-desc">Feedback loops, emergent behaviour, and how complex systems fail and recover.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <!-- ── TIER V ── -->
+  <details class="tier">
+    <summary class="tier-header">
+      <span class="tier-num">V</span>
+      <span class="tier-name">Language & Society</span>
+      <span class="tier-status status-live">Live</span>
+      <span class="tier-arrow">›</span>
+    </summary>
+    <div class="tier-body">
+      <p style="font-size:0.83rem;color:var(--text-muted);margin-bottom:4px;">Languages, ideas, institutions, and how human societies organise themselves.</p>
+      <div class="courses-grid">
+        <a class="course-card" href="t05-language-society/c01-language-learning/index.html">
+          <span class="course-card-title">How to Learn a Language</span>
+          <span class="course-card-desc">Not a language course — a course about how language acquisition works, so every language you study after this is faster.</span>
+          <span class="course-card-meta">10 chapters · Live</span>
+        </a>
+        <div class="course-card coming">
+          <span class="course-card-title">Spanish</span>
+          <span class="course-card-desc">From first words to functional reading and conversation — built on the language learning foundations.</span>
+          <span class="course-card-meta coming-meta">In development</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Philosophy</span>
+          <span class="course-card-desc">The central questions — knowledge, ethics, existence — and how thinkers have approached them.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+        <div class="course-card coming">
+          <span class="course-card-title">Economics</span>
+          <span class="course-card-desc">How markets, incentives, and institutions shape decisions at every scale.</span>
+          <span class="course-card-meta coming-meta">Planned</span>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <div class="contribute-box">
+    <strong>Scholarium is open for contributions.</strong> If you have expertise in any of the planned or in-development subjects and want to write a chapter, <a href="../contribute.html">the contributor page</a> is open. Every chapter goes through a review before publishing. The writing guide is available there — the First Principles method applies to Scholarium exactly as it does to Self Sufficiency.
+  </div>
+
+</div>
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <p><em>Brainfolds</em> — Free curricula for curious people</p>
+    <p><a href="../donate.html">Support Brainfolds</a> · <a href="../contribute.html">Contribute a chapter</a></p>
+  </div>
+</footer>
+<script src="../assets/js/brainfolds-logger.js"></script>
+<script src="../assets/js/script.js" defer></script>
+</body>
+</html>

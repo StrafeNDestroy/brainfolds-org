@@ -1,0 +1,24 @@
+{
+  "name": "Brainfolds",
+  "short_name": "Brainfolds",
+  "description": "Free curricula for curious people. No account needed. Works offline.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#1A1208",
+  "theme_color": "#1A1208",
+  "icons": [
+    {
+      "src": "/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education"],
+  "lang": "en"
+}
