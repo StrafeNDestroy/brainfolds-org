@@ -23,6 +23,54 @@
 
 
 /* ─────────────────────────────────────────────────────────────
+   0. HAMBURGER MENU — Mobile navigation toggle
+   Injects a hamburger button into every page header. On mobile
+   (<768px) the nav links collapse behind the hamburger. On
+   desktop the button is hidden via CSS (display:none).
+───────────────────────────────────────────────────────────── */
+{
+  const headers = document.querySelectorAll( '.site-header-inner, .landing-header-inner' );
+  headers.forEach( header => {
+    const nav = header.querySelector( '.site-nav' );
+    if ( !nav ) return;
+
+    const btn = document.createElement( 'button' );
+    btn.className  = 'hamburger';
+    btn.setAttribute( 'aria-label', 'Toggle navigation' );
+    btn.setAttribute( 'aria-expanded', 'false' );
+    btn.innerHTML  = '<span class="hamburger-bar"></span><span class="hamburger-bar"></span><span class="hamburger-bar"></span>';
+
+    // Insert before the nav
+    nav.parentNode.insertBefore( btn, nav );
+
+    btn.addEventListener( 'click', () => {
+      const open = nav.classList.toggle( 'open' );
+      btn.classList.toggle( 'open', open );
+      btn.setAttribute( 'aria-expanded', String( open ) );
+    });
+
+    // Close menu when a link is tapped
+    nav.querySelectorAll( '.site-nav-link' ).forEach( link => {
+      link.addEventListener( 'click', () => {
+        nav.classList.remove( 'open' );
+        btn.classList.remove( 'open' );
+        btn.setAttribute( 'aria-expanded', 'false' );
+      });
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener( 'click', ( e ) => {
+      if ( !header.contains( e.target ) ) {
+        nav.classList.remove( 'open' );
+        btn.classList.remove( 'open' );
+        btn.setAttribute( 'aria-expanded', 'false' );
+      }
+    });
+  });
+}
+
+
+/* ─────────────────────────────────────────────────────────────
    1. LANDING PAGE — Stars + Parallax
    Only runs on pages that have a #stars element (the landing page).
    On every other page, getElementById returns null and nothing happens.
