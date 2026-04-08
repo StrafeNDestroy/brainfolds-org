@@ -15,18 +15,18 @@
  *   BFLog.snapshot()           — capture all form fields
  */
 
-var BFLog = (function () {
+const BFLog = (function () {
   'use strict';
 
   // ── Constants ──────────────────────────────────────────────────────────────
-  var VERSION     = '1.0.0';
-  var MAX_ENTRIES = 500;
-  var PERSIST_KEY = 'bf_debug_log';
-  var DEBOUNCE_MS = 500;   // short debounce so log-viewer picks up entries quickly
+  const VERSION     = '1.0.0';
+  const MAX_ENTRIES = 500;
+  const PERSIST_KEY = 'bf_debug_log';
+  const DEBOUNCE_MS = 500;   // short debounce so log-viewer picks up entries quickly
 
-  var LEVEL = { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3, CRITICAL: 4 };
+  const LEVEL = { DEBUG: 0, INFO: 1, WARN: 2, ERROR: 3, CRITICAL: 4 };
 
-  var CATS = {
+  const CATS = {
     INIT:     { level: LEVEL.INFO,     color: '#60a5fa', icon: '⬡' },
     NAV:      { level: LEVEL.INFO,     color: '#38bdf8', icon: '→' },
     NET:      { level: LEVEL.DEBUG,    color: '#818cf8', icon: '⇄' },
@@ -44,19 +44,19 @@ var BFLog = (function () {
   };
 
   // ── State ──────────────────────────────────────────────────────────────────
-  var _entries      = [];
-  var _list         = null;
-  var _paused       = false;
-  var _filterLevel  = LEVEL.DEBUG;
-  var _filterText   = '';
-  var _persistTimer = null;
-  var _sessionId    = _getOrCreateSession();
-  var _sessionStart = Date.now();
-  var _perfMarks    = {};
+  let _entries      = [];
+  let _list         = null;
+  let _paused       = false;
+  let _filterLevel  = LEVEL.DEBUG;
+  let _filterText   = '';
+  let _persistTimer = null;
+  const _sessionId    = _getOrCreateSession();
+  const _sessionStart = Date.now();
+  const _perfMarks    = {};
 
   // ── Safe storage ──────────────────────────────────────────────────────────
-  var _storage = (function () {
-    var _mem = {};
+  const _storage = (function () {
+    const _mem = {};
     try {
       localStorage.setItem('_bf_test', '1');
       localStorage.removeItem('_bf_test');
@@ -81,8 +81,8 @@ var BFLog = (function () {
 
   // ── Core entry ─────────────────────────────────────────────────────────────
   function _makeEntry(cat, msg, data) {
-    var now     = new Date();
-    var catMeta = CATS[cat] || CATS.INFO;
+    const now     = new Date();
+    const catMeta = CATS[cat] || CATS.INFO;
     return {
       ts:        now.toISOString(),
       ts_rel:    ((Date.now() - _sessionStart) / 1000).toFixed(3) + 's',
@@ -97,10 +97,21 @@ var BFLog = (function () {
     };
   }
 
-  // ── Primary log ───────────────────────────────────────────────────────────
+  /*
+  ====================
+  log
+
+   Primary log function. Creates a structured entry, appends to the
+   in-memory buffer, mirrors errors/criticals to native console,
+   renders to the log-viewer panel if open, and persists to localStorage.
+   cat:  category key from CATS (e.g. 'INFO', 'ERROR', 'NET')
+   msg:  human-readable message string
+   data: optional structured data object
+  ====================
+  */
   function log(cat, msg, data) {
-    var entry   = _makeEntry(cat, msg, data);
-    var catMeta = CATS[cat] || CATS.INFO;
+    const entry   = _makeEntry(cat, msg, data);
+    const catMeta = CATS[cat] || CATS.INFO;
 
     _entries.push(entry);
     if (_entries.length > MAX_ENTRIES) _entries.shift();
@@ -124,18 +135,33 @@ var BFLog = (function () {
     return entry;
   }
 
-  // ── Performance timing ─────────────────────────────────────────────────────
+  /*
+  ====================
+  perfStart / perfEnd
+
+   Bracket a code section to measure elapsed time.
+   perfStart records the high-resolution timestamp.
+   perfEnd calculates the delta, logs it as a PERF entry, and returns ms.
+  ====================
+  */
   function perfStart(name) { _perfMarks[name] = performance.now(); }
   function perfEnd(name) {
-    var start = _perfMarks[name];
+    const start = _perfMarks[name];
     if (start === undefined) return;
-    var ms = (performance.now() - start).toFixed(2);
+    const ms = (performance.now() - start).toFixed(2);
     delete _perfMarks[name];
     log('PERF', name + ' took ' + ms + 'ms', { name: name, ms: parseFloat(ms) });
     return parseFloat(ms);
   }
 
-  // ── Typed helpers ──────────────────────────────────────────────────────────
+  /*
+  ====================
+  info / warn / error
+
+   Typed convenience wrappers around log(). Prepend source label to message.
+   error() normalises Error objects into plain data for JSON serialisation.
+  ====================
+  */
   function info(source, msg, data)  { return log('INFO',     source + ': ' + msg, data); }
   function warn(source, msg, data)  { return log('WARN',     source + ': ' + msg, data); }
   function error(source, msg, data) {
@@ -145,19 +171,36 @@ var BFLog = (function () {
     }
     return log('ERROR', source + ': ' + msg, data);
   }
+
+  /*
+  ====================
+  logNav / logSubmit / logDraft / logMedia / logSupabase
+
+   Domain-specific typed loggers. Each routes to the correct category
+   so the log-viewer can filter by icon and colour.
+  ====================
+  */
   function logNav(page)             { return log('NAV',      '→ ' + page, { page: page }); }
   function logSubmit(step, data)    { return log('SUBMIT',   step, data); }
   function logDraft(action, data)   { return log('DRAFT',    action, data); }
   function logMedia(action, data)   { return log('MEDIA',    action, data); }
   function logSupabase(action, data){ return log('SUPABASE', action, data); }
 
-  // ── Network interceptor — patches window.fetch to log all requests ──────────
+  /*
+  ====================
+  _hookNetwork
+
+   Monkey-patches window.fetch to log all outbound requests and responses.
+   Skips noisy URLs (livereload, favicon). Categorises Supabase calls.
+   Logs timing, status, and slow-request warnings (>3000ms).
+  ====================
+  */
   function _hookNetwork() {
     if (typeof window.fetch !== 'function') return;
-    var _origFetch = window.fetch;
+    const _origFetch = window.fetch;
 
     // URLs to skip — noise with no diagnostic value
-    var SKIP_PATTERNS = [
+    const SKIP_PATTERNS = [
       'livereload',           // Live Server WebSocket polling
       'localhost:35729',      // Live Server legacy port
       '127.0.0.1:35729',
@@ -166,18 +209,18 @@ var BFLog = (function () {
     ];
 
     window.fetch = function(input, init) {
-      var url    = typeof input === 'string' ? input : (input && input.url) || String(input);
-      var method = (init && init.method) || (input && input.method) || 'GET';
+      const url    = typeof input === 'string' ? input : (input && input.url) || String(input);
+      const method = (init && init.method) || (input && input.method) || 'GET';
 
       // Skip noise
-      var skip = SKIP_PATTERNS.some(function(p) { return url.indexOf(p) !== -1; });
+      const skip = SKIP_PATTERNS.some(function(p) { return url.indexOf(p) !== -1; });
       if (skip) return _origFetch.apply(this, arguments);
 
-      var start   = performance.now();
-      var shortUrl = url.length > 80 ? url.slice(0, 77) + '…' : url;
+      const start   = performance.now();
+      const shortUrl = url.length > 80 ? url.slice(0, 77) + '…' : url;
 
       // Categorise the request
-      var cat = 'NET';
+      let cat = 'NET';
       if (url.indexOf('supabase.co') !== -1) cat = 'SUPABASE';
 
       log(cat, 'fetch → ' + method + ' ' + shortUrl, {
@@ -187,8 +230,8 @@ var BFLog = (function () {
       });
 
       return _origFetch.apply(this, arguments).then(function(response) {
-        var ms = Math.round(performance.now() - start);
-        var level = response.ok ? cat : 'ERROR';
+        const ms = Math.round(performance.now() - start);
+        const level = response.ok ? cat : 'ERROR';
         log(level, 'fetch ← ' + response.status + ' ' + method + ' ' + shortUrl, {
           status:   response.status,
           ok:       response.ok,
@@ -198,7 +241,7 @@ var BFLog = (function () {
         });
         return response;
       }, function(err) {
-        var ms = Math.round(performance.now() - start);
+        const ms = Math.round(performance.now() - start);
         log('ERROR', 'fetch ✕ ' + method + ' ' + shortUrl, {
           error:  err.message,
           ms:     ms,
@@ -209,7 +252,15 @@ var BFLog = (function () {
     };
   }
 
-  // ── Global error capture ───────────────────────────────────────────────────
+  /*
+  ====================
+  _hookGlobalErrors
+
+   Captures unhandled errors, unhandled promise rejections, and
+   intercepted console.error/warn calls from third-party libraries.
+   All are logged as CRITICAL or ERROR entries with stack traces.
+  ====================
+  */
   function _hookGlobalErrors() {
     window.addEventListener('error', function (e) {
       log('CRITICAL', 'Unhandled error: ' + e.message, {
@@ -222,7 +273,7 @@ var BFLog = (function () {
     });
 
     window.addEventListener('unhandledrejection', function (e) {
-      var reason = e.reason;
+      const reason = e.reason;
       log('CRITICAL', 'Unhandled promise rejection', {
         reason: String(reason),
         stack:  reason && reason.stack ? reason.stack.split('\n').slice(0, 6).join('\n') : null,
@@ -230,9 +281,9 @@ var BFLog = (function () {
     });
 
     // Intercept console.error so third-party libs are also caught
-    var _origError = console.error;
+    const _origError = console.error;
     console.error = function () {
-      var args = Array.prototype.slice.call(arguments);
+      const args = Array.prototype.slice.call(arguments);
       if (args[0] && String(args[0]).indexOf('[BFLog') === 0) {
         _origError.apply(console, args);
         return;
@@ -243,9 +294,9 @@ var BFLog = (function () {
       _origError.apply(console, args);
     };
 
-    var _origWarn = console.warn;
+    const _origWarn = console.warn;
     console.warn = function () {
-      var args = Array.prototype.slice.call(arguments);
+      const args = Array.prototype.slice.call(arguments);
       if (args[0] && String(args[0]).indexOf('[BFLog') === 0) {
         _origWarn.apply(console, args);
         return;
@@ -255,13 +306,20 @@ var BFLog = (function () {
     };
   }
 
-  // ── Persistence ────────────────────────────────────────────────────────────
+  /*
+  ====================
+  _persistNow
+
+   Immediately write all in-memory entries to localStorage, merging
+   with any entries from other browsing contexts. Caps at MAX_ENTRIES.
+  ====================
+  */
   function _persistNow() {
     try {
       // Merge with any entries already in storage from other browsing contexts
-      var existing = _readStoredEntries();
-      var myKeys   = new Set(_entries.map(function(e){ return e.ts + e.cat + e.msg; }));
-      var merged   = existing.filter(function(e){
+      const existing = _readStoredEntries();
+      const myKeys   = new Set(_entries.map(function(e){ return e.ts + e.cat + e.msg; }));
+      let merged   = existing.filter(function(e){
         return !myKeys.has(e.ts + e.cat + e.msg);
       }).concat(_entries).sort(function(a,b){ return a.ts < b.ts ? -1 : 1; });
       if (merged.length > MAX_ENTRIES) merged = merged.slice(-MAX_ENTRIES);
@@ -271,14 +329,17 @@ var BFLog = (function () {
         saved:   new Date().toISOString(),
         entries: merged.slice(-300),
       }));
-    } catch (e) { /* storage full */ }
+    } catch (e) {
+      // Storage full — mirror to native console since BFLog.log would recurse
+      console.warn('[BFLog] localStorage persist failed:', e.message);
+    }
   }
 
   function _readStoredEntries() {
     try {
-      var raw = _storage.getItem(PERSIST_KEY);
+      const raw = _storage.getItem(PERSIST_KEY);
       if (!raw) return [];
-      var payload = JSON.parse(raw);
+      const payload = JSON.parse(raw);
       return Array.isArray(payload.entries) ? payload.entries : [];
     } catch (e) { return []; }
   }
@@ -290,23 +351,32 @@ var BFLog = (function () {
 
   function _loadPersistedLog() {
     try {
-      var raw = _storage.getItem(PERSIST_KEY);
+      const raw = _storage.getItem(PERSIST_KEY);
       if (!raw) return;
-      var payload = JSON.parse(raw);
+      const payload = JSON.parse(raw);
       if (!Array.isArray(payload.entries) || !payload.entries.length) return;
-      var myKeys = new Set(_entries.map(function(e){ return e.ts + e.cat + e.msg; }));
-      var fresh  = payload.entries
+      const myKeys = new Set(_entries.map(function(e){ return e.ts + e.cat + e.msg; }));
+      const fresh  = payload.entries
         .filter(function(e){ return !myKeys.has(e.ts + e.cat + e.msg); })
         .map(function(e){ return Object.assign({}, e, { _restored: true }); });
       if (!fresh.length) return;
       _entries = fresh.concat(_entries);
       if (_entries.length > MAX_ENTRIES) _entries = _entries.slice(-MAX_ENTRIES);
-    } catch (e) { /* corrupted storage — skip */ }
+    } catch (e) {
+      console.warn('[BFLog] Corrupted persisted log — skipped:', e.message);
+    }
   }
 
-  // ── Snapshot ───────────────────────────────────────────────────────────────
+  /*
+  ====================
+  snapshot
+
+   Capture all form field values on the current page. Logs them as an
+   INFO entry and returns the field map. Useful for debugging form state.
+  ====================
+  */
   function snapshot() {
-    var fields = {};
+    const fields = {};
     document.querySelectorAll('input[id],select[id],textarea[id]').forEach(function (el) {
       if (el.value || el.checked) {
         fields[el.id] = el.type === 'checkbox' ? el.checked : el.value.slice(0, 200);
@@ -316,11 +386,20 @@ var BFLog = (function () {
     return fields;
   }
 
-  // ── Export ─────────────────────────────────────────────────────────────────
+  /*
+  ====================
+  exportLog
+
+   Download all log entries as a file. Supports two formats:
+   'ndjson' (default) — one JSON object per line, machine-readable.
+   'text' — human-readable .log format with box-drawing header.
+   Merges in-memory and localStorage entries before export.
+  ====================
+  */
   function exportLog(format) {
     format = format || 'ndjson';
-    var stamp    = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-    var header   = {
+    const stamp    = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    const header   = {
       app:      'Brainfolds',
       version:  VERSION,
       session:  _sessionId,
@@ -329,23 +408,23 @@ var BFLog = (function () {
       entries:  _entries.length,
     };
 
-    var content, filename, type;
+    let content, filename, type;
 
-    var allEntries = _readStoredEntries();
+    let allEntries = _readStoredEntries();
     // Also include any in-memory entries not yet persisted
-    var storedKeys2 = new Set(allEntries.map(function(e){ return e.ts + e.cat + e.msg; }));
+    const storedKeys2 = new Set(allEntries.map(function(e){ return e.ts + e.cat + e.msg; }));
     _entries.forEach(function(e){ if (!storedKeys2.has(e.ts + e.cat + e.msg)) allEntries.push(e); });
     allEntries.sort(function(a,b){ return a.ts < b.ts ? -1 : 1; });
     header.entries = allEntries.length;
 
     if (format === 'ndjson') {
-      var lines = [JSON.stringify(header)];
+      const lines = [JSON.stringify(header)];
       allEntries.forEach(function (e) { lines.push(JSON.stringify(e)); });
       content  = lines.join('\n');
       filename = 'brainfolds-' + stamp + '.ndjson';
       type     = 'application/x-ndjson';
     } else {
-      var lines2 = [
+        const lines2 = [
         '╔══════════════════════════════════════════════════════',
         '║  Brainfolds — Debug Log',
         '║  Session:  ' + _sessionId,
@@ -365,8 +444,8 @@ var BFLog = (function () {
       type     = 'text/plain';
     }
 
-    var blob = new Blob([content], { type: type });
-    var a    = document.createElement('a');
+    const blob = new Blob([content], { type: type });
+    const a    = document.createElement('a');
     a.href   = URL.createObjectURL(blob);
     a.download = filename;
     document.body.appendChild(a);
@@ -392,17 +471,27 @@ var BFLog = (function () {
 
   function _formatTs(iso) {
     try {
-      var d = new Date(iso);
-      var p = function(n) { return String(n).padStart(2, '0'); };
+      const d = new Date(iso);
+      const p = function(n) { return String(n).padStart(2, '0'); };
       return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) +
              '.' + String(d.getMilliseconds()).padStart(3, '0');
     } catch(e) { return iso || ''; }
   }
 
+  /*
+  ====================
+  _renderEntry
+
+   Append a single log entry as a DOM row in the log-viewer panel.
+   Uses createElement + textContent exclusively — no innerHTML with
+   untrusted data (entry.msg can come from intercepted console.error).
+   Applies level/category filtering and auto-scrolls to bottom.
+  ====================
+  */
   function _renderEntry(entry, scroll) {
     if (!_list) return;
 
-    var catMeta = CATS[entry.cat] || CATS.INFO;
+    const catMeta = CATS[entry.cat] || CATS.INFO;
     if (catMeta.level < _filterLevel) return;
 
     // Hide INIT spam by default — toggled via window._bfHideInit
@@ -412,16 +501,16 @@ var BFLog = (function () {
     if (_filterText &&
         (entry.msg + JSON.stringify(entry.data || '')).toLowerCase().indexOf(_filterText) === -1) return;
 
-    var row = document.createElement('div');
+    const row = document.createElement('div');
     row.className = 'bflog-row' + (entry._restored ? ' bflog-row--restored' : '');
     row.style.cursor = 'pointer';
 
-    var bg = _levelColor(catMeta.level);
+    const bg = _levelColor(catMeta.level);
     if (bg) row.style.background = bg + '18';
 
     // Every row is clickable — shows full detail in the right pane
     row.addEventListener('click', function () {
-      var det = document.getElementById('bflog-detail');
+      const det = document.getElementById('bflog-detail');
       if (det) {
         det.textContent =
           'Time:    ' + entry.ts + '\n' +
@@ -433,15 +522,25 @@ var BFLog = (function () {
       }
     });
 
-    row.innerHTML =
-      '<span class="bflog-rel">'  + _esc(_formatTs(entry.ts)) + '</span>' +
-      '<span class="bflog-icon" style="color:' + catMeta.color + '">' + catMeta.icon + '</span>' +
-      '<span class="bflog-cat"  style="color:' + catMeta.color + '">' + _esc(entry.cat) + '</span>' +
-      '<span class="bflog-page">' + _esc(entry.page || '') + '</span>' +
-      '<span class="bflog-msg">'  + _esc(entry.msg)  + '</span>' +
-      (entry.data
-        ? '<span class="bflog-peek">' + _esc(JSON.stringify(entry.data)).slice(0, 80) + '…</span>'
-        : '');
+    // Build row using DOM methods — no innerHTML with potentially untrusted data.
+    // entry.msg can contain content from intercepted console.error calls,
+    // which may include third-party strings. textContent is XSS-safe.
+    const mkSpan = function (cls, text, color) {
+      const s = document.createElement('span');
+      s.className = cls;
+      s.textContent = text;
+      if (color) s.style.color = color;
+      return s;
+    };
+
+    row.appendChild( mkSpan('bflog-rel',  _formatTs(entry.ts)) );
+    row.appendChild( mkSpan('bflog-icon', catMeta.icon, catMeta.color) );
+    row.appendChild( mkSpan('bflog-cat',  entry.cat, catMeta.color) );
+    row.appendChild( mkSpan('bflog-page', entry.page || '') );
+    row.appendChild( mkSpan('bflog-msg',  entry.msg) );
+    if (entry.data) {
+      row.appendChild( mkSpan('bflog-peek', JSON.stringify(entry.data).slice(0, 80) + '…') );
+    }
 
     _list.appendChild(row);
     while (_list.children.length > MAX_ENTRIES) _list.removeChild(_list.firstChild);
@@ -454,9 +553,9 @@ var BFLog = (function () {
   }
 
   function _updateStatus() {
-    var el = document.getElementById('bflog-count');
+    const el = document.getElementById('bflog-count');
     if (el) {
-      var count = _readStoredEntries().length;
+        const count = _readStoredEntries().length;
       el.textContent = count + ' entr' + (count === 1 ? 'y' : 'ies');
     }
   }
@@ -464,9 +563,9 @@ var BFLog = (function () {
   function _rebuildList() {
     if (!_list) return;
     // Read ALL entries from localStorage so we pick up logs from every iframe/page
-    var all = _readStoredEntries();
+    let all = _readStoredEntries();
     // Also include any in-memory entries not yet persisted
-    var storedKeys = new Set(all.map(function(e){ return e.ts + e.cat + e.msg; }));
+    const storedKeys = new Set(all.map(function(e){ return e.ts + e.cat + e.msg; }));
     _entries.forEach(function(e){
       if (!storedKeys.has(e.ts + e.cat + e.msg)) all.push(e);
     });
@@ -480,7 +579,7 @@ var BFLog = (function () {
   // Called by the storage event AND by the visibility/focus fallback poll.
   function _syncFromStorage() {
     if (_paused || !_list) return;
-    var prev = _entries.length;
+    const prev = _entries.length;
     _loadPersistedLog();
     if (_entries.length > prev) {
       // Append only new rows — don't rebuild everything (avoids flicker,
@@ -518,14 +617,22 @@ var BFLog = (function () {
     }
   });
 
-  // Called by log-viewer.html once its DOM is ready
+  /*
+  ====================
+  initPanel
+
+   Called by log-viewer.html once its DOM is ready. Injects styles,
+   wires up filter/search/export/clear buttons, loads persisted entries,
+   and renders the initial log view.
+  ====================
+  */
   function initPanel() {
-    var panel = document.getElementById('page-logger');
+    const panel = document.getElementById('page-logger');
     if (!panel) return;
 
     // Inject styles
     if (!document.getElementById('bflog-styles')) {
-      var css = document.createElement('style');
+        const css = document.createElement('style');
       css.id = 'bflog-styles';
       css.textContent = [
         '.bflog-btn{background:rgba(255,255,255,.05);border:1px solid #3A2814;',
@@ -553,7 +660,7 @@ var BFLog = (function () {
     }
 
     _list = document.getElementById('bflog-list');
-    var $ = function (id) { return document.getElementById(id); };
+    const $ = function (id) { return document.getElementById(id); };
 
     if ($('bflog-snapshot'))       $('bflog-snapshot').onclick      = function () { snapshot(); _updateStatus(); };
     if ($('bflog-export-ndjson'))  $('bflog-export-ndjson').onclick = function () { exportLog('ndjson'); };
@@ -563,7 +670,7 @@ var BFLog = (function () {
       _entries = [];
       _storage.removeItem(PERSIST_KEY);
       if (_list) _list.innerHTML = '';
-      var det = $('bflog-detail'); if (det) det.textContent = '← click a row with data to inspect';
+      const det = $('bflog-detail'); if (det) det.textContent = '← click a row with data to inspect';
       _updateStatus();
     };
     if ($('bflog-pause'))          $('bflog-pause').onclick         = function () {
@@ -584,11 +691,11 @@ var BFLog = (function () {
     });
 
     // Search
-    var _searchTimer;
+    let _searchTimer;
     if ($('bflog-search')) {
       $('bflog-search').addEventListener('input', function () {
         clearTimeout(_searchTimer);
-        var val = this.value;
+          const val = this.value;
         _searchTimer = setTimeout(function () {
           _filterText = val.toLowerCase();
           _rebuildList();

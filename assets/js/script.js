@@ -28,18 +28,25 @@
    On every other page, getElementById returns null and nothing happens.
 ───────────────────────────────────────────────────────────── */
 {
+  /* ── Named constants (Bug Hunting Part 3: no magic numbers) ── */
+  const STAR_COUNT           = 220;
+  const STAR_LARGE_CHANCE    = 0.08;
+  const STAR_MEDIUM_CHANCE   = 0.25;
+  const STAR_AREA_TOP_PCT    = 72;
+  const PARALLAX_LIMIT       = 1.2;
+  const PARALLAX_TREELINE    = 0;      // was 0.28 — trees were drifting over paragraph text below
+  const PARALLAX_STARS       = 0.12;
+
   const starsEl = document.getElementById('stars');
 
   if (starsEl) {
-    // Generate 220 stars with randomised size, position, and timing.
-    // CSS animation reads --dur, --delay, and --op as custom properties.
-    for (let i = 0; i < 220; i++) {
+    for (let i = 0; i < STAR_COUNT; i++) {
       const s  = document.createElement('div');
-      const sz = Math.random() < 0.08 ? 3 : Math.random() < 0.25 ? 2 : 1;
+      const sz = Math.random() < STAR_LARGE_CHANCE ? 3 : Math.random() < STAR_MEDIUM_CHANCE ? 2 : 1;
       s.className = 'star';
       s.style.cssText = [
         `left:${Math.random() * 100}%`,
-        `top:${Math.random() * 72}%`,
+        `top:${Math.random() * STAR_AREA_TOP_PCT}%`,
         `width:${sz}px`,
         `height:${sz}px`,
         `--dur:${(2.5 + Math.random() * 4).toFixed(2)}s`,
@@ -49,19 +56,17 @@
       starsEl.appendChild(s);
     }
 
-    // Parallax on scroll — throttled with requestAnimationFrame so it
-    // runs at most once per frame rather than on every scroll event.
     let ticking = false;
     window.addEventListener('scroll', () => {
       if (ticking) return;
       requestAnimationFrame(() => {
         const { scrollY } = window;
         const hero = document.querySelector('.hero');
-        if (hero && scrollY < hero.offsetHeight * 1.2) {
+        if (hero && scrollY < hero.offsetHeight * PARALLAX_LIMIT) {
           const treeline = document.querySelector('.treeline');
           const stars    = document.querySelector('.stars');
-          if (treeline) treeline.style.transform = `translateY(${scrollY * 0.28}px)`;
-          if (stars)    stars.style.transform    = `translateY(${scrollY * 0.12}px)`;
+          if (treeline) treeline.style.transform = `translateY(${scrollY * PARALLAX_TREELINE}px)`;
+          if (stars)    stars.style.transform    = `translateY(${scrollY * PARALLAX_STARS}px)`;
         }
         ticking = false;
       });
@@ -117,6 +122,9 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
 {
   'use strict';
 
+  /* ── Named constants ───────────────────────────────────── */
+  const WRONG_ANSWER_FLASH_MS = 700;
+
   let score     = 0;
   const done    = {};
 
@@ -141,11 +149,18 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if (summaryEl) summaryEl.textContent = `${score} / ${total}`;
   };
 
-  // ── True / False ──────────────────────────────────────────
-  // id:  question id, e.g. "tf3"
-  // val: the button the user clicked ("T" or "F")
-  // ans: array of correct answers for all TF questions on page
-  // btn: the button DOM element (so we can find its siblings)
+  /*
+  ====================
+  qTF — True/False Quiz Handler
+
+   Handles a True/False answer click. Disables both buttons,
+   colours them correct/wrong, updates score and progress bar.
+   id:  question id, e.g. "tf3"
+   val: the button the user clicked ("T" or "F")
+   ans: array of correct answers for all TF questions on page
+   btn: the button DOM element (so we can find its siblings)
+  ====================
+  */
   window.qTF = (id, val, ans, btn) => {
     if (done[id]) return;
 
@@ -172,8 +187,14 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     updateScore();
   };
 
-  // ── Short Answer ──────────────────────────────────────────
-  // Shows the model answer and self-grade buttons (Got it / Partial / Missed).
+  /*
+  ====================
+  qSA — Short Answer Quiz Handler
+
+   Shows the model answer and self-grade buttons (Got it / Partial / Missed).
+   Builds the self-grade UI via DOM methods to avoid innerHTML with dynamic ids.
+  ====================
+  */
   window.qSA = (id, btn) => {
     if (done[id]) return;
 
@@ -213,7 +234,14 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     done[id] = 'p';
   };
 
-  // ── Short Answer self-grade ───────────────────────────────
+  /*
+  ====================
+  qGrade — Short Answer Self-Grade
+
+   Handles the Got it / Partial / Missed button click after
+   a short answer is revealed. Awards score if 'Got it'.
+  ====================
+  */
   window.qGrade = (id, ok, btn) => {
     btn.parentNode.querySelectorAll('.quiz-sg').forEach(b => { b.disabled = true; });
     if (ok) score++;
@@ -221,10 +249,15 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     updateScore();
   };
 
-  // ── Fill in the Blank ────────────────────────────────────
-  // Accepts partial matches: user answer just needs to contain (or
-  // be contained in) the correct answer when both are > 4 chars.
-  // Multiple accepted answers are separated by / | or "or".
+  /*
+  ====================
+  qFIB — Fill in the Blank Quiz Handler
+
+   Accepts partial matches: user answer just needs to contain (or
+   be contained in) the correct answer when both are > 4 chars.
+   Multiple accepted answers are separated by / | or "or".
+  ====================
+  */
   window.qFIB = (id, ans, inp) => {
     if (done[id]) return;
     if (!inp?.value.trim()) { inp?.focus(); return; }
@@ -251,11 +284,17 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
       inp.classList.add('quiz-blank-wrong');
       if (fb) { fb.textContent = '✗ Not quite — try again.'; fb.className = 'quiz-fb quiz-fb-wrong'; }
       document.getElementById(`try-${id}`)?.style.setProperty('display', 'inline-block');
-      setTimeout(() => inp.classList.remove('quiz-blank-wrong'), 700);
+      setTimeout(() => inp.classList.remove('quiz-blank-wrong'), WRONG_ANSWER_FLASH_MS);
     }
   };
 
-  // ── Fill in the Blank — reset ─────────────────────────────
+  /*
+  ====================
+  qFIBreset — Fill in the Blank Reset
+
+   Clears the input field and feedback, hides the Try Again button.
+  ====================
+  */
   window.qFIBreset = id => {
     const inp = document.getElementById(`blank-${id}`);
     const fb  = document.getElementById(`fb-${id}`);
@@ -264,7 +303,14 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     document.getElementById(`try-${id}`)?.style.setProperty('display', 'none');
   };
 
-  // ── Fill in the Blank — reveal answer ────────────────────
+  /*
+  ====================
+  qFIBreveal — Fill in the Blank Reveal Answer
+
+   Shows the correct answer without awarding score.
+   Marks the question as done to prevent further interaction.
+  ====================
+  */
   window.qFIBreveal = (id, ans) => {
     if (done[id]) return;
     const fb = document.getElementById(`fb-${id}`);
@@ -302,6 +348,12 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     const panel       = document.getElementById('toc-panel');
 
     if (toggle && panel) {
+
+      /* ── Named constants ─────────────────────────────────── */
+      const HEADER_OFFSET_PX       = 70;   // sticky header height for scroll offset
+      const SCROLLSPY_THRESHOLD_PX = 160;  // px below top to trigger section highlight
+      const BOUNDARY_LOG_THROTTLE  = 1000; // ms between scroll-boundary log entries
+      const BOTTOM_TOLERANCE_PX    = 2;    // px tolerance for "at bottom" detection
 
       // H2 ids to skip — structural end-of-chapter sections.
       const SKIP = new Set([
@@ -456,7 +508,7 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
         if (!target) return;
         // Use scrollIntoView for smooth scroll, but account for sticky header
         // by scrolling to slightly above the element using window.scrollTo
-        const top = target.getBoundingClientRect().top + window.scrollY - 70;
+        const top = target.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET_PX;
         window.scrollTo({ top, behavior: 'smooth' });
       });
 
@@ -467,7 +519,7 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
 
       if (sectionLinks.length) {
         const getActive = () => {
-          const threshold = window.scrollY + 160;
+          const threshold = window.scrollY + SCROLLSPY_THRESHOLD_PX;
           return sectionLinks.findLast(a => {
             const el = document.getElementById(a.dataset.target);
             return el && el.getBoundingClientRect().top + window.scrollY <= threshold;
@@ -506,9 +558,9 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
           if (typeof BFLog !== 'undefined') {
             const el     = document.scrollingElement || document.documentElement;
             const atTop  = el.scrollTop <= 0;
-            const atBot  = el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
+            const atBot  = el.scrollTop + el.clientHeight >= el.scrollHeight - BOTTOM_TOLERANCE_PX;
             const now    = Date.now();
-            if ((atTop || atBot) && now - _lastBoundary > 1000) {
+            if ((atTop || atBot) && now - _lastBoundary > BOUNDARY_LOG_THROTTLE) {
               _lastBoundary = now;
               BFLog.log('SCROLL', 'page hit scroll boundary', {
                 boundary:     atTop ? 'top' : 'bottom',
@@ -551,7 +603,7 @@ if (typeof BFLog !== 'undefined') {
         }
       });
     }).observe({ type: 'layout-shift', buffered: true });
-  } catch(e) {}
+  } catch(e) { BFLog.log('WARN', 'PerformanceObserver layout-shift unavailable', { error: e.message }); }
 
   // Long tasks >50ms — causes of visible jank/freeze
   try {
@@ -565,7 +617,7 @@ if (typeof BFLog !== 'undefined') {
         });
       });
     }).observe({ type: 'longtask', buffered: true });
-  } catch(e) {}
+  } catch(e) { BFLog.log('WARN', 'PerformanceObserver longtask unavailable', { error: e.message }); }
 
   // Navigation type — was this page a redirect, back/forward, or normal?
   try {
@@ -586,7 +638,7 @@ if (typeof BFLog !== 'undefined') {
         });
       }
     }
-  } catch(e) {}
+  } catch(e) { BFLog.log('WARN', 'Navigation timing unavailable', { error: e.message }); }
 
   // Scroll restoration type — did browser restore position or reset to top?
   try {
@@ -599,9 +651,10 @@ if (typeof BFLog !== 'undefined') {
         page:             location.pathname.split('/').pop(),
       });
     }
-  } catch(e) {}
+  } catch(e) { BFLog.log('WARN', 'Scroll restoration check failed', { error: e.message }); }
 
   // localStorage quota and availability check
+  const STORAGE_WARN_KB = 2048;
   try {
     const testKey = '_bf_quota_test';
     localStorage.setItem(testKey, '1');
@@ -612,7 +665,7 @@ if (typeof BFLog !== 'undefined') {
       if (localStorage.hasOwnProperty(k)) used += (localStorage[k].length + k.length) * 2;
     }
     const usedKB = Math.round(used / 1024);
-    if (usedKB > 2048) {
+    if (usedKB > STORAGE_WARN_KB) {
       BFLog.log('WARN', 'localStorage usage high — ' + usedKB + ' KB', {
         usedKB, page: location.pathname.split('/').pop(),
       });

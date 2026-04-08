@@ -1,144 +1,185 @@
 /* ═══════════════════════════════════════════════════════════════
    BRAINFOLDS — brainfolds-reviews.js
    Review system + Video suggestion system
-   Depends on: Supabase JS client (loaded via CDN in HTML)
-   ═══════════════════════════════════════════════════════════════
-
-   Sections:
-     1. Config + Supabase client
-     2. Utilities (page key, browser token, IP hash, star render)
-     3. Review drawer — chapter rating + review feed
-     4. Review footer badge — aggregate score shown at chapter bottom
-     5. Index page aggregates — course/section score display
-     6. Video system — approved videos + suggestion form
-     7. Init — wire everything up on DOMContentLoaded
+   Updated: April 2026
+   Refactored: April 2026 — XSS fix, error handling, input validation
    ═══════════════════════════════════════════════════════════════ */
 
-
 /* ─────────────────────────────────────────────────────────────
-   1. CONFIG + SUPABASE CLIENT
+   1. CONFIG + SUPABASE CLIENT (via BFAuth shared client)
 ───────────────────────────────────────────────────────────── */
 const BRAINFOLDS = (() => {
+  'use strict';
 
-  const SUPABASE_URL = 'https://ekykcbmtmqzltkwhhxny.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_kUs7eM3cLtVCzJR6eBR4Qg_Fqo0k182';
+  /* ── Constants ──────────────────────────────────────────── */
+  const MAX_STARS         = 10;
+  const MIN_REVIEWS_SHOW  = 10;
+  const REVIEWS_PER_PAGE  = 8;
+  const MAX_NAME_LENGTH   = 20;
+  const MAX_REVIEW_LENGTH = 1000;
 
-  // Supabase JS client — loaded from CDN before this script
-  const db = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY);
+  /*  OFFLINE CHECK: Disable database if running locally or as a file */
+  const isOffline = window.location.protocol === 'file:' ||
+                    window.location.hostname === 'localhost' ||
+                    window.location.hostname === '127.0.0.1';
 
+  // Use the shared BFAuth client instead of creating a second one
+  const db = ( !isOffline && typeof BFAuth !== 'undefined' )
+    ? BFAuth.getClient()
+    : null;
+
+  if ( isOffline && typeof console !== 'undefined' ) {
+    console.log( 'BRAINFOLDS: Offline mode — Supabase bypassed.' );
+  }
 
   /* ───────────────────────────────────────────────────────────
      2. UTILITIES
   ─────────────────────────────────────────────────────────── */
 
-  // Derive a stable page key from the URL path
-  // e.g. /self-sufficiency/s01-foundation/c01-botany-basics/ch01.html
-  //   →  self-sufficiency/s01/c01/ch01
-  function getPageKey() {
-    const path = window.location.pathname.replace(/\/index\.html$/, '/');
-    const parts = path.split('/').filter(Boolean);
+  /*
+  ====================
+  EscHtml
 
-    // Map folder names to short keys
-    const shorten = seg => {
-      if (/^s\d+/.test(seg)) return seg.match(/^(s\d+)/)?.[1] ?? seg;
-      if (/^c\d+/.test(seg)) return seg.match(/^(c\d+)/)?.[1] ?? seg;
-      if (/^ch\d+/.test(seg)) return seg.replace('.html', '').match(/^(ch\d+)/)?.[1] ?? seg;
-      return seg.replace('.html', '');
-    };
-
-    return parts.map(shorten).join('/');
+   HTML-escape a string to prevent XSS when inserting into the DOM.
+   Covers the five characters that can break out of HTML attribute
+   or element context: & < > " '
+  ====================
+  */
+  function escHtml( str ) {
+    return String( str || '' )
+      .replace( /&/g, '&amp;' )
+      .replace( /</g, '&lt;' )
+      .replace( />/g, '&gt;' )
+      .replace( /"/g, '&quot;' )
+      .replace( /'/g, '&#39;' );
   }
 
-  // Persistent browser token — stored in localStorage
-  // Used so visitors can edit/delete their own reviews
+  /*
+  ====================
+  GetPageKey
+
+   Derive a stable page identifier from the URL path.
+   e.g. /self-sufficiency/s01-foundation/c03-soil-science/ch04.html → "self-sufficiency/s01/c03/ch04"
+  ====================
+  */
+  function getPageKey() {
+    const path  = window.location.pathname.replace( /\/index\.html$/, '/' );
+    const parts = path.split( '/' ).filter( Boolean );
+    const shorten = seg => {
+      if ( /^s\d+/.test( seg ) ) return seg.match( /^(s\d+)/ )?.[1] ?? seg;
+      if ( /^c\d+/.test( seg ) ) return seg.match( /^(c\d+)/ )?.[1] ?? seg;
+      if ( /^ch\d+/.test( seg ) ) return seg.replace( '.html', '' ).match( /^(ch\d+)/ )?.[1] ?? seg;
+      return seg.replace( '.html', '' );
+    };
+    return parts.map( shorten ).join( '/' );
+  }
+
+  /*
+  ====================
+  GetBrowserToken
+
+   Return a stable anonymous token for this browser.
+   Created once, stored in localStorage.
+  ====================
+  */
   function getBrowserToken() {
-    let t = localStorage.getItem('bf_token');
-    if (!t) {
+    let t = localStorage.getItem( 'bf_token' );
+    if ( !t ) {
       t = crypto.randomUUID();
-      localStorage.setItem('bf_token', t);
+      localStorage.setItem( 'bf_token', t );
     }
     return t;
   }
 
-  // One-way hash of IP address for rate limiting
-  // We never store the raw IP — only a SHA-256 hash
-  async function getIPHash() {
-    try {
-      const res  = await fetch('https://api.ipify.org?format=json');
-      const data = await res.json();
-      const enc  = new TextEncoder().encode(data.ip + 'brainfolds-salt-2026');
-      const hash = await crypto.subtle.digest('SHA-256', enc);
-      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-    } catch {
-      // Fallback: hash a random value — won't rate-limit but won't break either
-      return 'fallback-' + Math.random().toString(36).slice(2);
-    }
-  }
+  /*
+  ====================
+  RenderStars
 
-  // Render star string for a 1-10 rating
-  // Uses filled/empty stars scaled to 10
-  function renderStars(rating, max = 10) {
-    const filled = Math.round(rating);
-    return Array.from({ length: max }, (_, i) =>
+   Build a star rating display string using DOM-safe escaped HTML.
+   Filled stars up to the rounded rating, empty stars for the rest.
+  ====================
+  */
+  function renderStars( rating, max ) {
+    max = max || MAX_STARS;
+    const filled = Math.round( rating );
+    return Array.from( { length: max }, ( _, i ) =>
       `<span class="bf-star ${i < filled ? 'bf-star-filled' : 'bf-star-empty'}">★</span>`
-    ).join('');
+    ).join( '' );
   }
 
-  // Format a timestamp to a readable relative date
-  function timeAgo(ts) {
-    const diff = Date.now() - new Date(ts).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1)   return 'just now';
-    if (mins < 60)  return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24)   return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    if (days < 30)  return `${days}d ago`;
-    return new Date(ts).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  /*
+  ====================
+  TimeAgo
+
+   Human-readable relative timestamp.
+  ====================
+  */
+  function timeAgo( ts ) {
+    const diff = Date.now() - new Date( ts ).getTime();
+    const mins = Math.floor( diff / 60000 );
+    if ( mins < 1 )  return 'just now';
+    if ( mins < 60 ) return `${mins}m ago`;
+    const hrs = Math.floor( mins / 60 );
+    if ( hrs < 24 )  return `${hrs}h ago`;
+    const days = Math.floor( hrs / 24 );
+    if ( days < 30 ) return `${days}d ago`;
+    return new Date( ts ).toLocaleDateString( 'en-US', { month: 'short', year: 'numeric' } );
   }
 
-  // Extract YouTube video ID from any YouTube URL format
-  function extractYouTubeId(url) {
+  /*
+  ====================
+  ExtractYouTubeId
+
+   Extract the 11-character video ID from various YouTube URL formats.
+   Returns null if no valid ID is found.
+  ====================
+  */
+  function extractYouTubeId( url ) {
     const patterns = [
       /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
       /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
     ];
-    for (const p of patterns) {
-      const m = url.match(p);
-      if (m) return m[1];
+    for ( const p of patterns ) {
+      const m = url.match( p );
+      if ( m ) return m[1];
     }
     return null;
   }
 
-
   /* ───────────────────────────────────────────────────────────
-     3. REVIEW DRAWER
-     Slide-in panel from the right with:
-     - Aggregate score (large)
-     - Paginated review feed (newest first)
-     - Submission form (stars + optional name + text)
+     3. DOM BUILDERS (DRAWER & BADGE)
   ─────────────────────────────────────────────────────────── */
 
+  /*
+  ====================
+  BuildDrawer
+
+   Construct the review drawer overlay and panel.
+   All user-facing text is static — dynamic content uses textContent.
+  ====================
+  */
   function buildDrawer() {
-    // Inject CSS
-
-    // Build overlay + drawer DOM
-    const overlay = document.createElement('div');
+    const overlay = document.createElement( 'div' );
     overlay.className = 'bf-drawer-overlay';
-    overlay.setAttribute('aria-hidden', 'true');
+    overlay.setAttribute( 'aria-hidden', 'true' );
 
-    const drawer = document.createElement('div');
+    const drawer = document.createElement( 'div' );
     drawer.className = 'bf-drawer';
-    drawer.setAttribute('role', 'dialog');
-    drawer.setAttribute('aria-modal', 'true');
-    drawer.setAttribute('aria-label', 'Chapter reviews');
+    drawer.setAttribute( 'role', 'dialog' );
+    drawer.setAttribute( 'aria-modal', 'true' );
+    drawer.setAttribute( 'aria-label', 'Chapter reviews' );
+
+    // Build star picker buttons — static HTML, safe
+    const starButtons = Array.from( { length: MAX_STARS }, ( _, i ) =>
+      `<span class="bf-star unselected" data-val="${i + 1}" role="button" aria-label="${i + 1} stars" tabindex="0">★</span>`
+    ).join( '' );
 
     drawer.innerHTML = `
       <div class="bf-drawer-header">
         <div class="bf-drawer-score-wrap">
           <div>
             <span class="bf-drawer-score" id="bf-score">—</span>
-            <span class="bf-drawer-score-max">/ 10</span>
+            <span class="bf-drawer-score-max">/ ${MAX_STARS}</span>
           </div>
           <div class="bf-drawer-stars" id="bf-header-stars"></div>
           <div class="bf-drawer-count" id="bf-count">No reviews yet</div>
@@ -146,613 +187,684 @@ const BRAINFOLDS = (() => {
         <button class="bf-drawer-close" id="bf-close" aria-label="Close reviews">✕</button>
       </div>
       <div class="bf-drawer-body" id="bf-drawer-body">
-
-        <!-- Submit form -->
         <label class="bf-form-label">Rate this chapter</label>
         <div class="bf-star-picker" id="bf-star-picker" role="group" aria-label="Rating 1 to 10">
-          ${Array.from({length:10},(_,i)=>`<span class="bf-star unselected" data-val="${i+1}" role="button" aria-label="${i+1} stars" tabindex="0">★</span>`).join('')}
+          ${starButtons}
         </div>
-        <input class="bf-input" id="bf-name" type="text" placeholder="Your name (optional)" maxlength="20" autocomplete="off" />
-        <textarea class="bf-textarea" id="bf-text" placeholder="Leave a review (optional)" maxlength="1000"></textarea>
+        <div class="bf-auth-row" id="bf-auth-row"></div>
+        <input class="bf-input" id="bf-name" type="text" placeholder="Your name (optional)" maxlength="${MAX_NAME_LENGTH}" autocomplete="off" />
+        <div class="bf-comment-type" id="bf-comment-type" role="group" aria-label="Comment type">
+          <button class="bf-type-btn active" data-type="general">General</button>
+          <button class="bf-type-btn" data-type="congrats">Congrats</button>
+          <button class="bf-type-btn" data-type="feedback">Feedback</button>
+        </div>
+        <textarea class="bf-textarea" id="bf-text" placeholder="Leave a review (optional)" maxlength="${MAX_REVIEW_LENGTH}"></textarea>
         <button class="bf-submit-btn" id="bf-submit">Submit review</button>
         <div class="bf-form-msg" id="bf-msg"></div>
-
         <hr class="bf-divider">
-
-        <!-- Review feed -->
         <div class="bf-reviews-title" id="bf-feed-title">Recent reviews</div>
         <div id="bf-feed"></div>
         <button class="bf-load-more" id="bf-load-more" style="display:none">Load more</button>
       </div>
     `;
-
-    document.body.appendChild(overlay);
-    document.body.appendChild(drawer);
-
+    document.body.appendChild( overlay );
+    document.body.appendChild( drawer );
     return { overlay, drawer };
   }
 
+  /*
+  ====================
+  BuildFooterBadge
 
-  /* ───────────────────────────────────────────────────────────
-     4. REVIEW FOOTER BADGE
-  ─────────────────────────────────────────────────────────── */
-
-  function buildFooterBadge(avg, count, scoreVisible = false) {
-    const badge = document.createElement('div');
+   Create the clickable footer badge showing the chapter's average rating.
+  ====================
+  */
+  function buildFooterBadge( avg, count, scoreVisible ) {
+    const badge = document.createElement( 'div' );
     badge.className  = 'bf-footer-badge';
     badge.id         = 'bf-footer-badge';
-    badge.setAttribute('role', 'button');
-    badge.setAttribute('tabindex', '0');
-    badge.setAttribute('aria-label', `${scoreVisible ? avg + ' out of 10' : 'Ratings pending'} — open reviews`);
+    badge.setAttribute( 'role', 'button' );
+    badge.setAttribute( 'tabindex', '0' );
+    badge.setAttribute( 'aria-label',
+      `${scoreVisible ? avg + ' out of 10' : 'Ratings pending'} — open reviews` );
 
-    const scoreText = scoreVisible ? avg.toFixed(1) : '—';
+    const scoreText = scoreVisible ? avg.toFixed( 1 ) : '—';
     const countText = count === 0
       ? 'Be the first to review'
-      : count < 10
-      ? `${count} rating${count === 1 ? '' : 's'} — score shows at 10`
-      : count === 1 ? '1 review'
-      : `${count} reviews`;
+      : count < MIN_REVIEWS_SHOW
+        ? `${count} rating${count === 1 ? '' : 's'} — score shows at ${MIN_REVIEWS_SHOW}`
+        : `${count} reviews`;
 
     badge.innerHTML = `
-      <div class="bf-badge-score">${scoreText}<span> / 10</span></div>
+      <div class="bf-badge-score">${escHtml( scoreText )}<span> / ${MAX_STARS}</span></div>
       <div class="bf-badge-right">
-        <div class="bf-badge-stars">${scoreVisible ? renderStars(avg) : '——————————'}</div>
-        <div class="bf-badge-label">${countText}</div>
+        <div class="bf-badge-stars">${scoreVisible ? renderStars( avg ) : '——————————'}</div>
+        <div class="bf-badge-label">${escHtml( countText )}</div>
       </div>
       <div class="bf-badge-cta">Reviews →</div>
     `;
     return badge;
   }
 
-
   /* ───────────────────────────────────────────────────────────
-     5. REVIEW SYSTEM — main logic
+     4. REVIEW FEED RENDERING (XSS-SAFE)
   ─────────────────────────────────────────────────────────── */
 
-  async function initReviews() {
-    if (!db) return;
+  /*
+  ====================
+  RenderReviewItem
 
-    const pageKey      = getPageKey();
-    const isChapter    = /\/ch\d+$/.test(pageKey);
-    const chapterFooter = document.querySelector('.chapter-footer');
+   Build a single review card using DOM methods — never innerHTML
+   with user-provided data. All user text goes through textContent.
+  ====================
+  */
+  /*
+  ====================
+  VoteOnReview
 
-    if (!isChapter || !chapterFooter) return;
-
-    // ── Fetch aggregate ───────────────────────────────────────
-    // score_visible = true only when review_count >= 10 (bomb protection)
-    let avg = 0, count = 0, scoreVisible = false;
+   Submit a like (+1) or dislike (-1) on a review.
+   Uses browser_token for uniqueness. Upserts (changes vote if re-clicked).
+  ====================
+  */
+  async function voteOnReview( reviewId, vote, likeBtn, dislikeBtn ) {
+    if ( !db ) return;
     try {
-      const { data } = await db
-        .from('chapter_scores')
-        .select('avg_rating, review_count, score_visible')
-        .eq('page_key', pageKey)
+      const token  = getBrowserToken();
+      const userId = ( typeof BFAuth !== 'undefined' && BFAuth.getUser() )
+        ? BFAuth.getUser().id : null;
+
+      const { error } = await db
+        .from( 'review_votes' )
+        .upsert({
+          review_id:     reviewId,
+          vote:          vote,
+          browser_token: token,
+          user_id:       userId,
+        }, { onConflict: 'review_id,browser_token' });
+
+      if ( error ) throw error;
+
+      // Update button states visually
+      likeBtn.classList.toggle( 'bf-vote-active', vote === 1 );
+      dislikeBtn.classList.toggle( 'bf-vote-active', vote === -1 );
+
+      // Update counts
+      const { data: counts } = await db
+        .from( 'review_votes' )
+        .select( 'vote' )
+        .eq( 'review_id', reviewId );
+
+      if ( counts ) {
+        const likes    = counts.filter( v => v.vote === 1 ).length;
+        const dislikes = counts.filter( v => v.vote === -1 ).length;
+        likeBtn.querySelector( '.bf-vote-count' ).textContent    = likes > 0 ? likes : '';
+        dislikeBtn.querySelector( '.bf-vote-count' ).textContent = dislikes > 0 ? dislikes : '';
+      }
+    } catch ( err ) {
+      if ( typeof BFLog !== 'undefined' ) BFLog.error( 'reviews', 'Vote failed', err );
+    }
+  }
+
+  function renderReviewItem( review ) {
+    const item = document.createElement( 'div' );
+    item.className = 'bf-review-item';
+
+    // Meta line: name + type badge + stars
+    const meta = document.createElement( 'div' );
+    meta.className = 'bf-review-meta';
+
+    const nameEl = document.createElement( 'b' );
+    nameEl.textContent = review.reviewer_name || 'Anonymous';
+
+    // Comment type badge
+    const commentType = review.comment_type || 'general';
+    const typeBadge = document.createElement( 'span' );
+    typeBadge.className = 'bf-type-badge bf-type-' + commentType;
+    const typeLabels = { general: 'General', congrats: 'Congrats', feedback: 'Feedback' };
+    typeBadge.textContent = typeLabels[commentType] || 'General';
+
+    const starsEl = document.createElement( 'span' );
+    starsEl.innerHTML = renderStars( review.rating );
+
+    meta.appendChild( nameEl );
+    meta.appendChild( document.createTextNode( ' ' ) );
+    meta.appendChild( typeBadge );
+    meta.appendChild( document.createTextNode( ' ' ) );
+    meta.appendChild( starsEl );
+
+    // Review text
+    const textEl = document.createElement( 'p' );
+    textEl.textContent = review.review_text || '';
+
+    // Like / dislike row
+    const voteRow = document.createElement( 'div' );
+    voteRow.className = 'bf-vote-row';
+
+    const likeBtn = document.createElement( 'button' );
+    likeBtn.className = 'bf-vote-btn bf-vote-like';
+    likeBtn.innerHTML = '▲ <span class="bf-vote-count">' +
+      ( ( review.likes && review.likes > 0 ) ? review.likes : '' ) + '</span>';
+    likeBtn.setAttribute( 'aria-label', 'Like this review' );
+    likeBtn.setAttribute( 'title', 'Helpful' );
+
+    const dislikeBtn = document.createElement( 'button' );
+    dislikeBtn.className = 'bf-vote-btn bf-vote-dislike';
+    dislikeBtn.innerHTML = '▼ <span class="bf-vote-count">' +
+      ( ( review.dislikes && review.dislikes > 0 ) ? review.dislikes : '' ) + '</span>';
+    dislikeBtn.setAttribute( 'aria-label', 'Dislike this review' );
+    dislikeBtn.setAttribute( 'title', 'Not helpful' );
+
+    // Mark active if user already voted
+    if ( review.user_vote === 1 )  likeBtn.classList.add( 'bf-vote-active' );
+    if ( review.user_vote === -1 ) dislikeBtn.classList.add( 'bf-vote-active' );
+
+    likeBtn.addEventListener( 'click', () => voteOnReview( review.id, 1, likeBtn, dislikeBtn ) );
+    dislikeBtn.addEventListener( 'click', () => voteOnReview( review.id, -1, likeBtn, dislikeBtn ) );
+
+    voteRow.appendChild( likeBtn );
+    voteRow.appendChild( dislikeBtn );
+
+    // Timestamp
+    const timeEl = document.createElement( 'span' );
+    timeEl.className = 'bf-review-time';
+    timeEl.textContent = timeAgo( review.created_at );
+    voteRow.appendChild( timeEl );
+
+    item.appendChild( meta );
+    item.appendChild( textEl );
+    item.appendChild( voteRow );
+    return item;
+  }
+
+  /* ───────────────────────────────────────────────────────────
+     5. REVIEW SYSTEM
+  ─────────────────────────────────────────────────────────── */
+
+  /*
+  ====================
+  InitReviews
+
+   Wire up the review system: badge, drawer, star picker, submission, feed.
+   Handles offline mode, error states, and XSS-safe rendering.
+  ====================
+  */
+  async function initReviews() {
+    /* OFFLINE FALLBACK */
+    if ( !db ) {
+      const chapterFooter = document.querySelector( '.chapter-footer' );
+      if ( chapterFooter ) {
+        const offlineMsg = document.createElement( 'div' );
+        offlineMsg.style.cssText = 'text-align:center; opacity:0.6; font-size:0.8rem; padding:20px; border-top:1px solid rgba(196, 146, 42, 0.1);';
+        const em = document.createElement( 'i' );
+        em.textContent = 'Note: Live reviews are available on the web version (brainfolds.org).';
+        offlineMsg.appendChild( em );
+        chapterFooter.insertAdjacentElement( 'beforebegin', offlineMsg );
+      }
+      return;
+    }
+
+    const pageKey       = getPageKey();
+    const isChapter     = /\/ch\d+$/.test( pageKey );
+    const chapterFooter = document.querySelector( '.chapter-footer' );
+    if ( !isChapter || !chapterFooter ) return;
+
+    let avg          = 0;
+    let count        = 0;
+    let scoreVisible = false;
+
+    try {
+      const { data, error } = await db
+        .from( 'chapter_scores' )
+        .select( 'avg_rating, review_count, score_visible' )
+        .eq( 'page_key', pageKey )
         .single();
-      if (data) {
-        avg          = parseFloat(data.avg_rating);
-        count        = parseInt(data.review_count);
+
+      if ( error ) throw error;
+      if ( data ) {
+        avg          = parseFloat( data.avg_rating ) || 0;
+        count        = parseInt( data.review_count, 10 ) || 0;
         scoreVisible = data.score_visible === true;
       }
-    } catch { /* no reviews yet */ }
+    } catch ( err ) {
+      /* No reviews yet — use defaults */
+      if ( typeof BFLog !== 'undefined' ) {
+        BFLog.warn( 'reviews', 'Failed to load chapter scores', err );
+      }
+    }
 
-    // ── Build footer badge ────────────────────────────────────
-    const badge = buildFooterBadge(avg, count, scoreVisible);
-    chapterFooter.insertAdjacentElement('beforebegin', badge);
-
-    // ── Build drawer ──────────────────────────────────────────
+    const badge = buildFooterBadge( avg, count, scoreVisible );
+    chapterFooter.insertAdjacentElement( 'beforebegin', badge );
     const { overlay, drawer } = buildDrawer();
 
-    // Populate header
-    const scoreEl       = drawer.querySelector('#bf-score');
-    const headerStarsEl = drawer.querySelector('#bf-header-stars');
-    const countEl       = drawer.querySelector('#bf-count');
+    /* ── Auth-aware name field ───────────────────────────── */
+    const authRow = drawer.querySelector( '#bf-auth-row' );
+    const nameInput = drawer.querySelector( '#bf-name' );
 
-    function updateHeader(a, c, visible) {
-      scoreEl.textContent       = visible ? a.toFixed(1) : '—';
-      headerStarsEl.innerHTML   = visible ? renderStars(a) : '';
-      countEl.textContent       = c === 0 ? 'No reviews yet'
-                                : c < 10  ? `${c} rating${c === 1 ? '' : 's'} — score shows at 10`
-                                : c === 1 ? '1 review'
-                                : `${c} reviews`;
+    function updateAuthUI() {
+      if ( typeof BFAuth === 'undefined' ) return;
+      const user = BFAuth.getUser();
+      authRow.innerHTML = '';
+
+      if ( user ) {
+        // Signed in — show avatar + name, hide manual name field
+        nameInput.style.display = 'none';
+        nameInput.value = user.name;
+
+        const userRow = document.createElement( 'div' );
+        userRow.style.cssText = 'display:flex;align-items:center;gap:10px;margin:8px 0 4px;';
+
+        if ( user.avatar ) {
+          const av = document.createElement( 'img' );
+          av.src = user.avatar;
+          av.alt = '';
+          av.style.cssText = 'width:28px;height:28px;border-radius:50%;';
+          userRow.appendChild( av );
+        }
+
+        const nameSpan = document.createElement( 'span' );
+        nameSpan.textContent = `Reviewing as ${user.name}`;
+        nameSpan.style.cssText = 'font-size:0.82rem;color:var(--text-mid);';
+        userRow.appendChild( nameSpan );
+
+        const signOutBtn = document.createElement( 'button' );
+        signOutBtn.textContent = 'Sign out';
+        signOutBtn.style.cssText = 'margin-left:auto;font-family:var(--mono);font-size:0.62rem;background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:3px;padding:3px 8px;cursor:pointer;';
+        signOutBtn.addEventListener( 'click', () => BFAuth.signOut() );
+        userRow.appendChild( signOutBtn );
+
+        authRow.appendChild( userRow );
+      } else {
+        // Not signed in — show optional sign-in prompt (non-blocking)
+        nameInput.style.display = '';
+        nameInput.value = '';
+
+        const prompt = document.createElement( 'div' );
+        prompt.style.cssText = 'display:flex;align-items:center;gap:8px;margin:6px 0 2px;flex-wrap:wrap;';
+
+        const label = document.createElement( 'span' );
+        label.textContent = 'or sign in:';
+        label.style.cssText = 'font-size:0.72rem;color:var(--text-muted);';
+        prompt.appendChild( label );
+
+        const googleBtn = document.createElement( 'button' );
+        googleBtn.textContent = 'Google';
+        googleBtn.style.cssText = 'font-family:var(--mono);font-size:0.62rem;background:none;border:1px solid var(--border);color:var(--text-mid);border-radius:3px;padding:3px 10px;cursor:pointer;';
+        googleBtn.addEventListener( 'click', () => BFAuth.signInWithGoogle() );
+        prompt.appendChild( googleBtn );
+
+        const ghBtn = document.createElement( 'button' );
+        ghBtn.textContent = 'GitHub';
+        ghBtn.style.cssText = 'font-family:var(--mono);font-size:0.62rem;background:none;border:1px solid var(--border);color:var(--text-mid);border-radius:3px;padding:3px 10px;cursor:pointer;';
+        ghBtn.addEventListener( 'click', () => BFAuth.signInWithGitHub() );
+        prompt.appendChild( ghBtn );
+
+        authRow.appendChild( prompt );
+      }
     }
-    updateHeader(avg, count, scoreVisible);
 
-    // ── Open/close ────────────────────────────────────────────
-    function openDrawer() {
-      overlay.classList.add('open');
-      drawer.classList.add('open');
+    updateAuthUI();
+    if ( typeof BFAuth !== 'undefined' ) {
+      BFAuth.onAuthChange( () => updateAuthUI() );
+    }
+
+    const scoreEl      = drawer.querySelector( '#bf-score' );
+    const headerStarsEl = drawer.querySelector( '#bf-header-stars' );
+    const countEl      = drawer.querySelector( '#bf-count' );
+    const msgEl        = drawer.querySelector( '#bf-msg' );
+    let feedPage       = 0;
+
+    function updateHeader( a, c, v ) {
+      scoreEl.textContent   = v ? a.toFixed( 1 ) : '—';
+      headerStarsEl.innerHTML = v ? renderStars( a ) : '';
+      countEl.textContent   = c === 0
+        ? 'No reviews yet'
+        : c < MIN_REVIEWS_SHOW
+          ? `${c} rating${c === 1 ? '' : 's'} — score shows at ${MIN_REVIEWS_SHOW}`
+          : `${c} reviews`;
+    }
+    updateHeader( avg, count, scoreVisible );
+
+    /* ── Open / close drawer ─────────────────────────────── */
+    const openDrawer = () => {
+      overlay.classList.add( 'open' );
+      drawer.classList.add( 'open' );
       document.body.style.overflow = 'hidden';
-      drawer.querySelector('#bf-close').focus();
-      loadFeed(0);
-    }
-
-    function closeDrawer() {
-      overlay.classList.remove('open');
-      drawer.classList.remove('open');
+      feedPage = 0;
+      loadFeed( 0 );
+    };
+    const closeDrawer = () => {
+      overlay.classList.remove( 'open' );
+      drawer.classList.remove( 'open' );
       document.body.style.overflow = '';
-      badge.focus();
-    }
+    };
 
-    badge.addEventListener('click', openDrawer);
-    badge.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openDrawer(); });
-    overlay.addEventListener('click', closeDrawer);
-    drawer.querySelector('#bf-close').addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+    badge.addEventListener( 'click', openDrawer );
+    overlay.addEventListener( 'click', closeDrawer );
+    drawer.querySelector( '#bf-close' ).addEventListener( 'click', closeDrawer );
 
-    // ── Star picker ───────────────────────────────────────────
+    /* ── Star Picker ─────────────────────────────────────── */
     let selectedRating = 0;
-    const picker = drawer.querySelector('#bf-star-picker');
-    const stars  = picker.querySelectorAll('.bf-star');
-
-    function setRating(val) {
-      selectedRating = val;
-      stars.forEach((s, i) => {
-        s.classList.toggle('selected',   i < val);
-        s.classList.toggle('unselected', i >= val);
-      });
-    }
-
-    picker.addEventListener('mousemove', e => {
-      const s = e.target.closest('.bf-star');
-      if (!s) return;
-      const hov = parseInt(s.dataset.val);
-      stars.forEach((st, i) => {
-        st.classList.toggle('selected',   i < hov);
-        st.classList.toggle('unselected', i >= hov);
+    const stars = drawer.querySelectorAll( '.bf-star-picker .bf-star' );
+    stars.forEach( s => {
+      s.addEventListener( 'click', () => {
+        selectedRating = parseInt( s.dataset.val, 10 );
+        stars.forEach( ( st, i ) => {
+          st.className = `bf-star ${i < selectedRating ? 'selected' : 'unselected'}`;
+        });
       });
     });
 
-    picker.addEventListener('mouseleave', () => setRating(selectedRating));
-
-    picker.addEventListener('click', e => {
-      const s = e.target.closest('.bf-star');
-      if (s) setRating(parseInt(s.dataset.val));
+    /* ── Comment Type Picker ─────────────────────────────── */
+    let selectedCommentType = 'general';
+    const typeBtns = drawer.querySelectorAll( '.bf-type-btn' );
+    typeBtns.forEach( btn => {
+      btn.addEventListener( 'click', () => {
+        typeBtns.forEach( b => b.classList.remove( 'active' ) );
+        btn.classList.add( 'active' );
+        selectedCommentType = btn.dataset.type;
+      });
     });
 
-    picker.addEventListener('keydown', e => {
-      if (e.key === 'ArrowRight' && selectedRating < 10) setRating(selectedRating + 1);
-      if (e.key === 'ArrowLeft'  && selectedRating > 1)  setRating(selectedRating - 1);
-      if (e.key === 'Enter' && selectedRating > 0) drawer.querySelector('#bf-submit').click();
-    });
-
-    // ── Submit review ─────────────────────────────────────────
-    const submitBtn = drawer.querySelector('#bf-submit');
-    const msgEl     = drawer.querySelector('#bf-msg');
-
-    submitBtn.addEventListener('click', async () => {
-      if (selectedRating === 0) {
-        showMsg('Please select a star rating first.', 'error');
+    /* ── Submit ───────────────────────────────────────────── */
+    drawer.querySelector( '#bf-submit' ).addEventListener( 'click', async () => {
+      if ( selectedRating === 0 ) {
+        msgEl.textContent = 'Please select a rating.';
         return;
       }
 
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Submitting…';
+      const textInput  = drawer.querySelector( '#bf-text' );
+
+      // Use auth name if signed in, otherwise manual name field
+      const authUser   = ( typeof BFAuth !== 'undefined' ) ? BFAuth.getUser() : null;
+      const name       = authUser
+        ? authUser.name.slice( 0, MAX_NAME_LENGTH )
+        : nameInput.value.trim().slice( 0, MAX_NAME_LENGTH );
+      const reviewText = textInput.value.trim().slice( 0, MAX_REVIEW_LENGTH );
+
+      msgEl.textContent = 'Submitting…';
 
       try {
-        const ipHash = await getIPHash();
-        const token  = getBrowserToken();
-
-        // Rate limit check
-        const { data: limited } = await db.rpc('already_reviewed', {
-          p_page_key: pageKey,
-          p_ip_hash:  ipHash,
-        });
-
-        if (limited) {
-          showMsg('You already reviewed this chapter in the last 24 hours.', 'error');
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Submit review';
-          return;
-        }
-
-        const { error } = await db.from('reviews').insert({
+        const insertData = {
           page_key:      pageKey,
           rating:        selectedRating,
-          reviewer_name: drawer.querySelector('#bf-name').value.trim() || null,
-          review_text:   drawer.querySelector('#bf-text').value.trim() || null,
-          browser_token: token,
-          ip_hash:       ipHash,
-        });
+          reviewer_name: name,
+          review_text:   reviewText,
+          comment_type:  selectedCommentType,
+          browser_token: getBrowserToken(),
+        };
 
-        if (error) throw error;
+        // Attach user_id if signed in (links review to account)
+        if ( authUser ) {
+          insertData.user_id = authUser.id;
+        }
 
-        showMsg('Thank you — your review has been submitted.', 'success');
-        drawer.querySelector('#bf-name').value = '';
-        drawer.querySelector('#bf-text').value = '';
-        setRating(0);
-        loadFeed(0, true);
+        const { error } = await db.from( 'reviews' ).insert( insertData );
 
-        // Refresh aggregate
-        count++;
-        avg = avg === 0
-          ? selectedRating
-          : parseFloat(((avg * (count - 1) + selectedRating) / count).toFixed(1));
-        scoreVisible = count >= 10;
-        updateHeader(avg, count, scoreVisible);
+        if ( error ) throw error;
 
-        // Update badge
-        badge.querySelector('.bf-badge-score').innerHTML =
-          `${scoreVisible ? avg.toFixed(1) : '—'}<span> / 10</span>`;
-        badge.querySelector('.bf-badge-stars').innerHTML =
-          scoreVisible ? renderStars(avg) : '——————————';
-        badge.querySelector('.bf-badge-label').textContent =
-          count < 10
-          ? `${count} rating${count === 1 ? '' : 's'} — score shows at 10`
-          : `${count} reviews`;
+        msgEl.textContent = 'Thank you for your review!';
+        msgEl.className   = 'bf-form-msg bf-form-msg-ok';
 
-      } catch (err) {
-        showMsg('Something went wrong. Please try again.', 'error');
-        BFLog.error('reviews', 'Review fetch failed', err);
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit review';
+        // Reload after a brief pause so the user sees confirmation
+        setTimeout( () => location.reload(), 1200 );
+
+      } catch ( err ) {
+        msgEl.textContent = 'Could not submit — please try again.';
+        msgEl.className   = 'bf-form-msg bf-form-msg-err';
+        if ( typeof BFLog !== 'undefined' ) {
+          BFLog.error( 'reviews', 'Submit failed', err );
+        }
       }
     });
 
-    function showMsg(text, type) {
-      msgEl.textContent  = text;
-      msgEl.className    = `bf-form-msg ${type}`;
-      setTimeout(() => { msgEl.className = 'bf-form-msg'; }, 5000);
-    }
-
-    // ── Review feed ───────────────────────────────────────────
-    const feedEl    = drawer.querySelector('#bf-feed');
-    const loadMoreBtn = drawer.querySelector('#bf-load-more');
-    const PAGE_SIZE = 8;
-    let   feedPage  = 0;
-    let   allLoaded = false;
-
-    async function loadFeed(page = 0, reset = false) {
-      if (reset) { feedPage = 0; allLoaded = false; feedEl.innerHTML = ''; }
-
+    /* ── Feed loader ─────────────────────────────────────── */
+    async function loadFeed( page ) {
       try {
-        const from = page * PAGE_SIZE;
+        const rangeStart = page * REVIEWS_PER_PAGE;
+        const rangeEnd   = rangeStart + REVIEWS_PER_PAGE - 1;
+
+        // Use the view that includes vote tallies
         const { data, error } = await db
-          .from('reviews')
-          .select('rating, reviewer_name, review_text, created_at')
-          .eq('page_key', pageKey)
-          .order('created_at', { ascending: false })
-          .range(from, from + PAGE_SIZE - 1);
+          .from( 'review_with_votes' )
+          .select( '*' )
+          .eq( 'page_key', pageKey )
+          .order( 'created_at', { ascending: false } )
+          .range( rangeStart, rangeEnd );
 
-        if (error) throw error;
-
-        if (data.length === 0 && page === 0) {
-          feedEl.innerHTML = '<p class="bf-reviews-empty">No reviews yet — be the first!</p>';
-          loadMoreBtn.style.display = 'none';
-          return;
+        if ( error ) {
+          // Fallback to plain reviews table if view doesn't exist yet
+          const fallback = await db
+            .from( 'reviews' )
+            .select( '*' )
+            .eq( 'page_key', pageKey )
+            .order( 'created_at', { ascending: false } )
+            .range( rangeStart, rangeEnd );
+          if ( fallback.error ) throw fallback.error;
+          return renderFeedData( fallback.data, page );
         }
 
-        data.forEach(r => {
-          const item = document.createElement('div');
-          item.className = 'bf-review-item';
-          item.innerHTML = `
-            <div class="bf-review-meta">
-              <span class="bf-review-name">${r.reviewer_name ? escHtml(r.reviewer_name) : 'Anonymous'}</span>
-              <span class="bf-review-rating">${renderStars(r.rating)}</span>
-              <span class="bf-review-rating" style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#C4922A;">${parseInt(r.rating, 10)}/10</span>
-              <span class="bf-review-time">${timeAgo(r.created_at)}</span>
-            </div>
-            ${r.review_text ? `<p class="bf-review-text">${escHtml(r.review_text)}</p>` : ''}
-          `;
-          feedEl.appendChild(item);
-        });
+        // Check which reviews the current user has voted on
+        const token = getBrowserToken();
+        if ( data && data.length > 0 ) {
+          const reviewIds = data.map( r => r.id );
+          const { data: myVotes } = await db
+            .from( 'review_votes' )
+            .select( 'review_id, vote' )
+            .eq( 'browser_token', token )
+            .in( 'review_id', reviewIds );
 
-        allLoaded = data.length < PAGE_SIZE;
-        loadMoreBtn.style.display = allLoaded ? 'none' : 'block';
-        feedPage = page + 1;
+          const voteMap = {};
+          if ( myVotes ) myVotes.forEach( v => { voteMap[v.review_id] = v.vote; } );
+          data.forEach( r => { r.user_vote = voteMap[r.id] || 0; } );
+        }
 
-      } catch (err) {
-        feedEl.innerHTML = '<p class="bf-reviews-empty">Could not load reviews.</p>';
-        BFLog.error('reviews', 'Review fetch failed', err);
+        renderFeedData( data, page );
+      } catch ( err ) {
+        if ( typeof BFLog !== 'undefined' ) {
+          BFLog.error( 'reviews', 'Failed to load feed', err );
+        }
       }
     }
 
-    loadMoreBtn.addEventListener('click', () => loadFeed(feedPage));
-  }
+    function renderFeedData( data, page ) {
+      const feed = drawer.querySelector( '#bf-feed' );
+      if ( page === 0 ) feed.innerHTML = '';
 
+      if ( data && data.length > 0 ) {
+        data.forEach( r => feed.appendChild( renderReviewItem( r ) ) );
+      }
 
-  /* ───────────────────────────────────────────────────────────
-     5b. INDEX PAGE AGGREGATES
-     Shows rolled-up scores on course/section index pages
-  ─────────────────────────────────────────────────────────── */
-
-  async function initIndexAggregates() {
-    if (!db) return;
-
-    const pageKey   = getPageKey();
-    const isIndex   = window.location.pathname.endsWith('/') ||
-                      window.location.pathname.endsWith('/index.html');
-    if (!isIndex) return;
-
-    // Find all curriculum cards and course cards on this page
-    const cards = document.querySelectorAll('.curriculum-card, .chapter-card, .subject-card');
-    if (!cards.length) return;
-
-    // Fetch all relevant scores in one query
-    try {
-      const { data } = await db
-        .from('course_scores')
-        .select('course_key, avg_rating, review_count, score_visible');
-
-      if (!data?.length) return;
-
-      const scoreMap = {};
-      data.forEach(row => { scoreMap[row.course_key] = row; });
-
-      cards.forEach(card => {
-        const href = card.getAttribute('href');
-        if (!href) return;
-
-        // Derive course key from the card's link
-        const url     = new URL(href, window.location.href);
-        const parts   = url.pathname.split('/').filter(Boolean);
-        const shorten = seg => {
-          if (/^s\d+/.test(seg)) return seg.match(/^(s\d+)/)?.[1] ?? seg;
-          if (/^c\d+/.test(seg)) return seg.match(/^(c\d+)/)?.[1] ?? seg;
-          return seg.replace('.html', '');
-        };
-        const courseKey = parts.map(shorten).join('/').replace(/\/index$/, '');
-        const score     = scoreMap[courseKey];
-        if (!score || !score.score_visible) return;
-
-        const pill = document.createElement('span');
-        pill.className = 'bf-score-pill';
-        pill.title     = `${score.review_count} reviews`;
-        pill.innerHTML = `<span class="bf-pill-star">★</span> ${parseFloat(score.avg_rating).toFixed(1)}<span style="color:#4A3820;font-size:0.6rem;">/10</span>`;
-
-        const bottom = card.querySelector('.card-bottom');
-        if (bottom) bottom.appendChild(pill);
-        else card.appendChild(pill);
-      });
-
-    } catch (err) {
-      BFLog.error('reviews', 'Aggregate fetch failed', err);
+      const loadMore = drawer.querySelector( '#bf-load-more' );
+      if ( data && data.length === REVIEWS_PER_PAGE ) {
+        loadMore.style.display = 'block';
+      } else {
+        loadMore.style.display = 'none';
+      }
     }
-  }
 
+    /* ── Load More button ────────────────────────────────── */
+    drawer.querySelector( '#bf-load-more' ).addEventListener( 'click', () => {
+      feedPage++;
+      loadFeed( feedPage );
+    });
+  }
 
   /* ───────────────────────────────────────────────────────────
      6. VIDEO SYSTEM
-     - Renders approved videos with ratings
-     - Suggestion form for visitors
   ─────────────────────────────────────────────────────────── */
 
+  /*
+  ====================
+  InitVideoSystem
+
+   Load approved video suggestions for this chapter page from Supabase
+   and render them as embedded YouTube iframes.
+  ====================
+  */
   async function initVideoSystem() {
-    if (!db) return;
-
-    const pageKey = getPageKey();
-    const isChapter = /\/ch\d+$/.test(pageKey);
-    if (!isChapter) return;
-
-    const videoGrid = document.querySelector('.video-grid');
-    const videoSection = document.querySelector('.video-section');
-    if (!videoGrid || !videoSection) return;
-
-    // ── Load approved videos ──────────────────────────────────
-    try {
-      const { data: videos } = await db
-        .from('video_suggestions')
-        .select('id, youtube_id, youtube_url, contributor_name, created_at')
-        .eq('page_key', pageKey)
-        .eq('status', 'approved')
-        .order('created_at', { ascending: true });
-
-      if (videos?.length) {
-        // Fetch ratings for these videos
-        const videoIds = videos.map(v => v.id);
-        const { data: ratings } = await db
-          .from('video_scores')
-          .select('video_id, avg_rating, rating_count, score_visible')
-          .in('video_id', videoIds);
-
-        const ratingMap = {};
-        ratings?.forEach(r => { ratingMap[r.video_id] = r; });
-
-        // Clear placeholder cards
+    if ( !db ) {
+      const videoGrid = document.querySelector( '.video-grid' );
+      if ( videoGrid ) {
+        const msg = document.createElement( 'p' );
+        msg.style.cssText = 'opacity:0.6; font-size:0.8rem; grid-column: 1 / -1; text-align:center;';
+        const em = document.createElement( 'i' );
+        em.textContent = 'Video contributions are managed live via the web version.';
+        msg.appendChild( em );
         videoGrid.innerHTML = '';
-
-        videos.forEach(video => {
-          const ytId    = video.youtube_id;
-          const score   = ratingMap[video.id];
-          const avgR    = score?.score_visible ? parseFloat(score.avg_rating) : 0;
-          const rCount  = score ? parseInt(score.rating_count) : 0;
-          const visible = score?.score_visible === true;
-          const contrib = video.contributor_name || 'Anonymous';
-
-          const card = document.createElement('div');
-          card.className = 'video-card';
-          card.dataset.videoId = video.id;
-          card.innerHTML = `
-            <div class="video-card-thumb">
-              <iframe
-                src="https://www.youtube-nocookie.com/embed/${ytId}?modestbranding=1&rel=0"
-                title="Video by ${escHtml(contrib)}"
-                loading="lazy"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen>
-              </iframe>
-            </div>
-            <div class="video-card-info">
-              <div class="video-card-title">Contributed by ${escHtml(contrib)}</div>
-              <div class="video-card-source bf-video-rating-wrap">
-                ${visible
-                  ? `${renderStars(avgR)} <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:#C4922A;">${avgR.toFixed(1)}/10</span> <span style="color:#4A3820;font-size:0.6rem;">(${rCount})</span>`
-                  : rCount === 0
-                  ? '<span style="color:#4A3820;font-size:0.65rem;">No ratings yet</span>'
-                  : `<span style="color:#4A3820;font-size:0.65rem;">${rCount} rating${rCount === 1 ? '' : 's'} — score shows at 10</span>`
-                }
-              </div>
-              <div class="bf-video-rate-row" style="margin-top:8px;">
-                <span style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:#7A6040;letter-spacing:0.08em;">RATE: </span>
-                <span class="bf-video-stars" data-video-id="${video.id}">
-                  ${Array.from({length:10},(_,i)=>`<span class="bf-star bf-star-empty" data-val="${i+1}" style="cursor:pointer;font-size:0.9rem;">★</span>`).join('')}
-                </span>
-              </div>
-            </div>
-          `;
-          videoGrid.appendChild(card);
-        });
-
-        // Wire up video star pickers
-        videoGrid.querySelectorAll('.bf-video-stars').forEach(wrap => {
-          const videoId = wrap.dataset.videoId;
-          const vstars  = wrap.querySelectorAll('.bf-star');
-          let   vRating = 0;
-
-          wrap.addEventListener('mousemove', e => {
-            const s = e.target.closest('.bf-star');
-            if (!s) return;
-            const hov = parseInt(s.dataset.val);
-            vstars.forEach((st, i) => {
-              st.className = `bf-star ${i < hov ? 'bf-star-filled' : 'bf-star-empty'}`;
-            });
-          });
-
-          wrap.addEventListener('mouseleave', () => {
-            vstars.forEach((st, i) => {
-              st.className = `bf-star ${i < vRating ? 'bf-star-filled' : 'bf-star-empty'}`;
-            });
-          });
-
-          wrap.addEventListener('click', async e => {
-            const s = e.target.closest('.bf-star');
-            if (!s) return;
-            vRating = parseInt(s.dataset.val);
-            vstars.forEach((st, i) => {
-              st.className = `bf-star ${i < vRating ? 'bf-star-filled' : 'bf-star-empty'}`;
-            });
-
-            try {
-              const ipHash = await getIPHash();
-              await db.from('video_ratings').insert({
-                video_id:      videoId,
-                rating:        vRating,
-                browser_token: getBrowserToken(),
-                ip_hash:       ipHash,
-              });
-            } catch (err) {
-              BFLog.error('video', 'Video rating failed', err);
-            }
-          });
-        });
+        videoGrid.appendChild( msg );
       }
-    } catch (err) {
-      BFLog.error('video', 'Video load failed', err);
+      return;
     }
 
-    // ── Suggestion form ───────────────────────────────────────
-    const suggestionWrap = document.createElement('div');
-    suggestionWrap.style.cssText = 'margin-top:24px;';
-    suggestionWrap.innerHTML = `
-      <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:#7A6040;margin-bottom:12px;">
-        Suggest a video for this chapter
-      </div>
-      <input class="bf-input" id="bf-yt-url" type="url" placeholder="YouTube URL" />
-      <input class="bf-input" id="bf-yt-name" type="text" placeholder="Your name (optional)" maxlength="20" />
-      <textarea class="bf-textarea" id="bf-yt-reason" placeholder="Why does this video help? (optional)" maxlength="300" style="min-height:60px;"></textarea>
-      <button class="bf-submit-btn" id="bf-yt-submit" style="background:#2A1C0C;color:#C4922A;border:1px solid #C4922A;">Suggest this video</button>
-      <div class="bf-form-msg" id="bf-yt-msg"></div>
-    `;
-    videoSection.appendChild(suggestionWrap);
+    const pageKey   = getPageKey();
+    const isChapter = /\/ch\d+$/.test( pageKey );
+    const videoGrid = document.querySelector( '.video-grid' );
+    if ( !isChapter || !videoGrid ) return;
 
-    // Inject input styles if not already there (they're in the review drawer styles)
-    document.querySelector('#bf-yt-submit').addEventListener('click', async () => {
-      const urlVal  = document.querySelector('#bf-yt-url').value.trim();
-      const ytId    = extractYouTubeId(urlVal);
-      const msgEl   = document.querySelector('#bf-yt-msg');
-      const btn     = document.querySelector('#bf-yt-submit');
+    try {
+      const { data: videos, error } = await db
+        .from( 'video_suggestions' )
+        .select( '*' )
+        .eq( 'page_key', pageKey )
+        .eq( 'status', 'approved' );
 
-      // Validate it's a real https YouTube URL — reject javascript:, data:, etc.
-      const isValidYouTubeUrl = ytId &&
-        /^https:\/\/(www\.)?(youtube\.com|youtu\.be)/.test(urlVal);
+      if ( error ) throw error;
 
-      if (!urlVal || !isValidYouTubeUrl) {
-        msgEl.textContent = 'Please enter a valid YouTube URL (must start with https://).';
-        msgEl.className   = 'bf-form-msg error';
-        return;
+      if ( videos && videos.length > 0 ) {
+        videoGrid.innerHTML = '';
+        videos.forEach( v => {
+          const card   = document.createElement( 'div' );
+          card.className = 'video-card';
+          const iframe = document.createElement( 'iframe' );
+          iframe.src         = `https://www.youtube-nocookie.com/embed/${escHtml( v.youtube_id )}`;
+          iframe.loading     = 'lazy';
+          iframe.allowFullscreen = true;
+          iframe.setAttribute( 'title', 'Video resource' );
+          card.appendChild( iframe );
+          videoGrid.appendChild( card );
+        });
       }
+    } catch ( err ) {
+      if ( typeof BFLog !== 'undefined' ) {
+        BFLog.error( 'videos', 'Failed to load video suggestions', err );
+      }
+    }
+  }
 
-      btn.disabled = true;
-      btn.textContent = 'Submitting…';
+  /* ───────────────────────────────────────────────────────────
+     7. QUESTION SUBMISSION FORM
+  ─────────────────────────────────────────────────────────── */
+
+  /*
+  ====================
+  InitQuestionForm
+
+   Adds a collapsible "Suggest a Quiz Question" form below the
+   review badge on chapter pages. Anonymous submissions allowed,
+   rate-limited to 5 per IP per page per 24 hours.
+  ====================
+  */
+  async function initQuestionForm() {
+    if ( !db ) return;
+
+    const pageKey   = getPageKey();
+    const isChapter = /\/ch\d+$/.test( pageKey );
+    const badge     = document.getElementById( 'bf-footer-badge' );
+    if ( !isChapter || !badge ) return;
+
+    // Build collapsible question form
+    const wrap = document.createElement( 'details' );
+    wrap.className = 'bf-question-form';
+    wrap.innerHTML = `
+      <summary class="bf-question-toggle">Suggest a Quiz Question</summary>
+      <div class="bf-question-body">
+        <select class="bf-input" id="bf-q-type">
+          <option value="">Question type…</option>
+          <option value="tf">True / False</option>
+          <option value="sa">Short Answer</option>
+          <option value="fib">Fill in the Blank</option>
+          <option value="practical">Practical / Scenario</option>
+        </select>
+        <textarea class="bf-textarea" id="bf-q-text" placeholder="Your question" maxlength="1000"></textarea>
+        <input class="bf-input" id="bf-q-answer" type="text" placeholder="Correct answer (optional)" maxlength="500" />
+        <input class="bf-input" id="bf-q-explain" type="text" placeholder="Brief explanation (optional)" maxlength="500" />
+        <button class="bf-submit-btn" id="bf-q-submit">Submit Question</button>
+        <div class="bf-form-msg" id="bf-q-msg"></div>
+      </div>
+    `;
+
+    badge.insertAdjacentElement( 'afterend', wrap );
+
+    // Submit handler
+    wrap.querySelector( '#bf-q-submit' ).addEventListener( 'click', async () => {
+      const qType    = wrap.querySelector( '#bf-q-type' ).value;
+      const qText    = wrap.querySelector( '#bf-q-text' ).value.trim();
+      const qAnswer  = wrap.querySelector( '#bf-q-answer' ).value.trim();
+      const qExplain = wrap.querySelector( '#bf-q-explain' ).value.trim();
+      const msgEl    = wrap.querySelector( '#bf-q-msg' );
+
+      if ( !qType )                     { msgEl.textContent = 'Please select a question type.'; return; }
+      if ( !qText || qText.length < 10 ) { msgEl.textContent = 'Question must be at least 10 characters.'; return; }
+
+      msgEl.textContent = 'Submitting…';
 
       try {
-        const ipHash = await getIPHash();
+        // Rate limit check
+        const ipRes   = await fetch( 'https://api.ipify.org?format=text' );
+        const ipText  = await ipRes.text();
+        const ipBytes = new TextEncoder().encode( ipText );
+        const hashBuf = await crypto.subtle.digest( 'SHA-256', ipBytes );
+        const ipHash  = Array.from( new Uint8Array( hashBuf ) ).map( b => b.toString(16).padStart(2, '0') ).join( '' );
 
-        const { data: limited } = await db.rpc('already_suggested', {
-          p_page_key: pageKey,
+        const { data: limited } = await db.rpc( 'question_rate_limited', {
           p_ip_hash:  ipHash,
+          p_page_key: pageKey,
         });
 
-        if (limited) {
-          msgEl.textContent = 'You already suggested a video for this chapter today.';
-          msgEl.className   = 'bf-form-msg error';
-          btn.disabled = false;
-          btn.textContent = 'Suggest this video';
+        if ( limited ) {
+          msgEl.textContent = 'You have reached the question limit for this chapter today (5 per 24 hours).';
           return;
         }
 
-        const { error } = await db.from('video_suggestions').insert({
-          page_key:         pageKey,
-          youtube_url:      urlVal,
-          youtube_id:       ytId,
-          contributor_name: document.querySelector('#bf-yt-name').value.trim() || null,
-          reason:           document.querySelector('#bf-yt-reason').value.trim() || null,
-          status:           'pending',
-          ip_hash:          ipHash,
+        const authUser = ( typeof BFAuth !== 'undefined' ) ? BFAuth.getUser() : null;
+
+        const { error } = await db.from( 'question_submissions' ).insert({
+          page_key:       pageKey,
+          question_type:  qType,
+          question_text:  qText,
+          correct_answer: qAnswer || null,
+          explanation:    qExplain || null,
+          user_id:        authUser ? authUser.id : null,
+          submitter_name: authUser ? authUser.name : null,
+          ip_hash:        ipHash,
         });
 
-        if (error) throw error;
+        if ( error ) throw error;
 
-        msgEl.textContent = 'Thanks! Your suggestion is under review and will appear once approved.';
-        msgEl.className   = 'bf-form-msg success';
-        document.querySelector('#bf-yt-url').value    = '';
-        document.querySelector('#bf-yt-name').value   = '';
-        document.querySelector('#bf-yt-reason').value = '';
+        msgEl.textContent = 'Question submitted — thank you!';
+        msgEl.className   = 'bf-form-msg bf-form-msg-ok';
+        wrap.querySelector( '#bf-q-type' ).value    = '';
+        wrap.querySelector( '#bf-q-text' ).value    = '';
+        wrap.querySelector( '#bf-q-answer' ).value  = '';
+        wrap.querySelector( '#bf-q-explain' ).value = '';
 
-      } catch (err) {
-        msgEl.textContent = 'Something went wrong. Please try again.';
-        msgEl.className   = 'bf-form-msg error';
-        BFLog.error('reviews', 'Review fetch failed', err);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Suggest this video';
+      } catch ( err ) {
+        msgEl.textContent = 'Could not submit — please try again.';
+        if ( typeof BFLog !== 'undefined' ) BFLog.error( 'questions', 'Submit failed', err );
       }
     });
   }
 
-
   /* ───────────────────────────────────────────────────────────
-     HELPER — escape HTML to prevent XSS in user content
-  ─────────────────────────────────────────────────────────── */
-  function escHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-
-  /* ───────────────────────────────────────────────────────────
-     7. INIT
+     8. INIT
   ─────────────────────────────────────────────────────────── */
   return {
     init() {
-      if (!db) {
-        BFLog.warn('init', 'Supabase not loaded');
-        return;
-      }
       initReviews();
-      initIndexAggregates();
+      initQuestionForm();
       initVideoSystem();
     }
   };
-
 })();
 
-// Boot when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => BRAINFOLDS.init());
-} else {
-  BRAINFOLDS.init();
-}
+document.addEventListener( 'DOMContentLoaded', () => BRAINFOLDS.init() );

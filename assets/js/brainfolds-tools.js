@@ -12,31 +12,72 @@
 (function () {
   'use strict';
 
-  // Derive context from URL path
-  // e.g. /self-sufficiency/s01-foundation/c03-soil-science/index.html
+  /* ── Constants ────────────────────────────────────────────── */
+  const TOOLS_FILENAME    = 'tools.json';
+  const SECTION_PATTERN   = /^s\d{2}-/;
+  const COURSE_PATTERN    = /^c\d{2}-/;
+  const CURRICULUM_NAMES  = new Set( ['self-sufficiency', 'scholarium'] );
+
+  /* ── Utilities ───────────────────────────────────────────── */
+
+  /*
+  ====================
+  GetPageContext
+
+   Derive curriculum, section, and course identifiers from the URL path.
+   Returns { curriculum, section, course } — any may be null.
+  ====================
+  */
   function getPageContext() {
-    const parts  = window.location.pathname.split('/').filter(Boolean);
+    const parts  = window.location.pathname.split( '/' ).filter( Boolean );
     const result = { curriculum: null, section: null, course: null };
-    for (const p of parts) {
-      if (p === 'self-sufficiency' || p === 'scholarium') result.curriculum = p;
-      if (/^s\d{2}-/.test(p)) result.section = p;
-      if (/^c\d{2}-/.test(p)) result.course = p;
+    for ( const p of parts ) {
+      if ( CURRICULUM_NAMES.has( p ) )    result.curriculum = p;
+      if ( SECTION_PATTERN.test( p ) )    result.section    = p;
+      if ( COURSE_PATTERN.test( p ) )     result.course     = p;
     }
     return result;
   }
 
-  function escHtml(s) {
-    return String(s || '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  /*
+  ====================
+  EscHtml
+
+   HTML-escape a string for safe insertion into the DOM via innerHTML.
+  ====================
+  */
+  function escHtml( s ) {
+    return String( s || '' )
+      .replace( /&/g, '&amp;' )
+      .replace( /</g, '&lt;' )
+      .replace( />/g, '&gt;' )
+      .replace( /"/g, '&quot;' )
+      .replace( /'/g, '&#39;' );
   }
 
-  function escAttr(s) {
-    return String(s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  /*
+  ====================
+  EscAttr
+
+   Escape a string for use inside an HTML attribute value.
+  ====================
+  */
+  function escAttr( s ) {
+    return String( s || '' )
+      .replace( /"/g, '&quot;' )
+      .replace( /'/g, '&#39;' );
   }
 
-  function renderWidget(tools, container) {
-    if (!tools.length) return; // Nothing to show — widget stays hidden
+  /*
+  ====================
+  RenderWidget
+
+   Build the tools grid HTML and inject into the container.
+   All dynamic strings are escaped before insertion.
+  ====================
+  */
+  function renderWidget( tools, container ) {
+    if ( !tools.length ) return;
 
     container.innerHTML = `
       <div class="bf-tools-section">
@@ -46,19 +87,23 @@
           <a class="bf-tools-all" href="/tools.html">All tools →</a>
         </div>
         <div class="bf-tools-grid">
-          ${tools.map(tool => `
+          ${tools.map( tool => `
             <div class="bf-tool-card">
               <div class="bf-tool-top">
-                <div class="bf-tool-name">${escHtml(tool.name)}</div>
-                ${tool.price_range ? `<span class="bf-tool-price">${escHtml(tool.price_range)}</span>` : ''}
+                <div class="bf-tool-name">${escHtml( tool.name )}</div>
+                ${tool.price_range
+                  ? `<span class="bf-tool-price">${escHtml( tool.price_range )}</span>`
+                  : ''}
               </div>
-              <div class="bf-tool-desc">${escHtml(tool.description)}</div>
-              ${tool.why ? `<div class="bf-tool-why">${escHtml(tool.why)}</div>` : ''}
+              <div class="bf-tool-desc">${escHtml( tool.description )}</div>
+              ${tool.why
+                ? `<div class="bf-tool-why">${escHtml( tool.why )}</div>`
+                : ''}
               ${tool.affiliate_url
-                ? `<a class="bf-tool-link" href="${escAttr(tool.affiliate_url)}" target="_blank" rel="noopener sponsored">View →</a>`
+                ? `<a class="bf-tool-link" href="${escAttr( tool.affiliate_url )}" target="_blank" rel="noopener sponsored">View →</a>`
                 : ''}
             </div>
-          `).join('')}
+          ` ).join( '' )}
         </div>
         <p class="bf-tools-disclosure">
           Affiliate disclosure: links above may earn Brainfolds a small commission at no cost to you.
@@ -67,38 +112,51 @@
     `;
   }
 
+  /*
+  ====================
+  Init
+
+   Main entry point. Loads tools.json, filters for relevance, and renders.
+  ====================
+  */
   async function init() {
-    const container = document.getElementById('bf-tools-widget');
-    if (!container) return; // No widget placeholder on this page
+    const container = document.getElementById( 'bf-tools-widget' );
+    if ( !container ) return;
 
     const ctx = getPageContext();
-    if (!ctx.curriculum) return;
+    if ( !ctx.curriculum ) return;
 
     try {
-      // Depth-aware path to tools.json
-      const depth = window.location.pathname.split('/').filter(Boolean).length;
-      const prefix = depth <= 1 ? '/' : '../'.repeat(depth - 1);
-      const url    = prefix + 'tools.json';
+      const depth  = window.location.pathname.split( '/' ).filter( Boolean ).length;
+      const prefix = depth <= 1 ? '/' : '../'.repeat( depth - 1 );
+      const url    = prefix + TOOLS_FILENAME;
 
-      const res  = await fetch(url);
+      const res = await fetch( url );
+      if ( !res.ok ) {
+        throw new Error( `tools.json fetch failed: ${res.status}` );
+      }
+
       const data = await res.json();
 
-      const relevant = (data.tools || []).filter(tool => {
-        if (!tool.active) return false;
-        if (tool.curriculum !== ctx.curriculum && tool.curriculum !== 'both') return false;
-        if (ctx.course  && tool.courses?.includes(ctx.course))   return true;
-        if (ctx.section && tool.sections?.includes(ctx.section)) return true;
+      const relevant = ( data.tools || [] ).filter( tool => {
+        if ( !tool.active ) return false;
+        if ( tool.curriculum !== ctx.curriculum && tool.curriculum !== 'both' ) return false;
+        if ( ctx.course  && tool.courses?.includes( ctx.course ) )   return true;
+        if ( ctx.section && tool.sections?.includes( ctx.section ) ) return true;
         return false;
       });
 
-      renderWidget(relevant, container);
-    } catch (err) {
-      BFLog.warn('tools', 'Tools widget failed to load', err);
+      renderWidget( relevant, container );
+
+    } catch ( err ) {
+      if ( typeof BFLog !== 'undefined' ) {
+        BFLog.warn( 'tools', 'Tools widget failed to load', err );
+      }
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+  if ( document.readyState === 'loading' ) {
+    document.addEventListener( 'DOMContentLoaded', init );
   } else {
     init();
   }
