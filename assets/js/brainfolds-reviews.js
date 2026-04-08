@@ -11,13 +11,12 @@
 const BRAINFOLDS = (() => {
   'use strict';
 
-  /* ── Constants (from BFConfig if available, else defaults) ── */
-  const _c                = ( typeof BFConfig !== 'undefined' ) ? BFConfig : {};
-  const MAX_STARS         = _c.MAX_STARS        || 10;
-  const MIN_REVIEWS_SHOW  = _c.MIN_REVIEWS_SHOW || 10;
+  /* ── Constants ──────────────────────────────────────────── */
+  const MAX_STARS         = 10;
+  const MIN_REVIEWS_SHOW  = 10;
   const REVIEWS_PER_PAGE  = 8;
-  const MAX_NAME_LENGTH   = _c.MAX_NAME_LENGTH  || 20;
-  const MAX_REVIEW_LENGTH = _c.MAX_REVIEW_LENGTH || 1000;
+  const MAX_NAME_LENGTH   = 20;
+  const MAX_REVIEW_LENGTH = 1000;
 
   /*  OFFLINE CHECK: Disable database if running locally or as a file */
   const isOffline = window.location.protocol === 'file:' ||
