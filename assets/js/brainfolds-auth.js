@@ -190,7 +190,15 @@ const BFAuth = (() => {
   function initUserNav() {
     // Render user nav on all pages (Sign In shows even if Supabase isn't connected)
 
+    // AbortController for cleaning up document-level listeners on re-render
+    // Prevents duplicate listeners from accumulating across sign-in/out cycles
+    let _navAbort = null;
+
     function renderUserNav( user ) {
+      // Clean up previous document-level listeners
+      if ( _navAbort ) _navAbort.abort();
+      _navAbort = new AbortController();
+
       // Remove existing user nav elements
       document.querySelectorAll( '.bf-user-nav' ).forEach( el => el.remove() );
       document.querySelectorAll( '.bf-user-dropdown' ).forEach( el => el.remove() );
@@ -309,14 +317,14 @@ const BFAuth = (() => {
             }
           });
 
-          // Close on outside click
+          // Close on outside click (uses abort signal — cleaned up on re-render)
           document.addEventListener( 'click', ( e ) => {
             if ( dropOpen && !wrapper.contains( e.target ) && !dropdown.contains( e.target ) ) {
               dropOpen = false;
               dropdown.classList.remove( 'open' );
               userBtn.setAttribute( 'aria-expanded', 'false' );
             }
-          });
+          }, { signal: _navAbort.signal } );
 
           // Load unread count immediately
           if ( _db ) loadUnreadBadge( user.id, badge );
