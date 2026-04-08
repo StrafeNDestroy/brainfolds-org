@@ -21,8 +21,8 @@ const BFAuth = (() => {
   'use strict';
 
   /* ── Constants ──────────────────────────────────────────── */
-  const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-  const SUPABASE_KEY = 'YOUR_ANON_KEY_HERE';
+  const SUPABASE_URL = ( typeof BFConfig !== 'undefined' ) ? BFConfig.SUPABASE_URL : '';
+  const SUPABASE_KEY = ( typeof BFConfig !== 'undefined' ) ? BFConfig.SUPABASE_KEY : '';
 
   const isOffline = window.location.protocol === 'file:' ||
                     window.location.hostname === 'localhost' ||
@@ -160,10 +160,8 @@ const BFAuth = (() => {
   */
   function onAuthChange( fn ) {
     _listeners.push( fn );
-    // Fire immediately with current state so UI can render
-    if ( _user ) {
-      try { fn( _user, 'EXISTING_SESSION' ); } catch ( e ) { if ( typeof BFLog !== 'undefined' ) BFLog.error( 'auth', 'listener error on existing session', e ); }
-    }
+    // Fire immediately with current state so UI can render (even if null / signed out)
+    try { fn( _user, _user ? 'EXISTING_SESSION' : 'NO_SESSION' ); } catch ( e ) { if ( typeof BFLog !== 'undefined' ) BFLog.error( 'auth', 'listener error on register', e ); }
   }
 
   /*
@@ -176,137 +174,243 @@ const BFAuth = (() => {
   */
   function getClient() { return _db; }
 
-  /* ── Notification Bell ───────────────────────────────────── */
+  /* ── User Nav — Sign In / Profile / Notifications ────────── */
 
   /*
   ====================
-  InitNotificationBell
+  InitUserNav
 
-   Injects a notification bell into the site header when the user
-   is signed in. Shows unread count badge. Clicking opens a dropdown
-   with recent notifications. Marks all as read on open.
+   Injects a user auth element into the site-nav on every page.
+   Signed out: shows "Sign In" link.
+   Signed in: shows avatar + name, with dropdown for notifications and sign out.
+   Replaces the old initNotificationBell — notifications now live inside
+   the user dropdown instead of a separate bell icon.
   ====================
   */
-  function initNotificationBell() {
-    if ( isOffline || !_db ) return;
+  function initUserNav() {
+    // Render user nav on all pages (Sign In shows even if Supabase isn't connected)
 
-    // Only show bell for signed-in users
-    function renderBell( user ) {
-      // Remove existing bell if any
-      const existing = document.getElementById( 'bf-notif-bell' );
-      if ( existing ) existing.remove();
-      const existingDrop = document.getElementById( 'bf-notif-dropdown' );
-      if ( existingDrop ) existingDrop.remove();
+    function renderUserNav( user ) {
+      // Remove existing user nav elements
+      document.querySelectorAll( '.bf-user-nav' ).forEach( el => el.remove() );
+      document.querySelectorAll( '.bf-user-dropdown' ).forEach( el => el.remove() );
 
-      if ( !user ) return;
+      // Find all navs on the page (landing + chapter headers)
+      const navs = document.querySelectorAll( '.site-nav' );
+      navs.forEach( nav => {
+        const wrapper = document.createElement( 'div' );
+        wrapper.className = 'bf-user-nav';
 
-      const header = document.querySelector( '.site-header-inner' ) ||
-                     document.querySelector( '.site-header' ) ||
-                     document.querySelector( 'header' );
-      if ( !header ) return;
+        if ( !user ) {
+          // ── Signed out: show Sign In link ──────────────
+          const signInLink = document.createElement( 'a' );
+          signInLink.className = 'site-nav-link bf-sign-in-link';
+          signInLink.href = '#';
+          signInLink.textContent = 'Sign In';
+          signInLink.addEventListener( 'click', ( e ) => {
+            e.preventDefault();
+            showSignInModal();
+          });
+          wrapper.appendChild( signInLink );
+        } else {
+          // ── Signed in: show avatar + name ──────────────
+          const userBtn = document.createElement( 'button' );
+          userBtn.className = 'bf-user-btn';
+          userBtn.setAttribute( 'aria-label', 'Account menu' );
+          userBtn.setAttribute( 'aria-expanded', 'false' );
 
-      // Bell button
-      const bell = document.createElement( 'button' );
-      bell.id = 'bf-notif-bell';
-      bell.setAttribute( 'aria-label', 'Notifications' );
-      bell.style.cssText = 'position:relative;background:none;border:none;cursor:pointer;font-size:1.2rem;padding:4px 8px;color:var(--text-mid,#888);margin-left:auto;';
-      bell.textContent = '🔔';
+          if ( user.avatar ) {
+            const av = document.createElement( 'img' );
+            av.src = user.avatar;
+            av.alt = '';
+            av.className = 'bf-user-avatar';
+            userBtn.appendChild( av );
+          }
 
-      const badge = document.createElement( 'span' );
-      badge.id    = 'bf-notif-badge';
-      badge.style.cssText = 'display:none;position:absolute;top:0;right:2px;background:#e74c3c;color:#fff;font-size:0.55rem;font-weight:700;border-radius:50%;min-width:14px;height:14px;line-height:14px;text-align:center;padding:0 3px;';
-      bell.appendChild( badge );
+          const nameSpan = document.createElement( 'span' );
+          nameSpan.className = 'bf-user-name';
+          nameSpan.textContent = user.name;
+          userBtn.appendChild( nameSpan );
 
-      // Dropdown
-      const dropdown = document.createElement( 'div' );
-      dropdown.id = 'bf-notif-dropdown';
-      dropdown.style.cssText = 'display:none;position:fixed;top:50px;right:16px;width:320px;max-height:400px;overflow-y:auto;background:var(--surface,#1a1a1a);border:1px solid var(--border,#333);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:10001;padding:0;';
-
-      // Insert into header
-      header.style.position = 'relative';
-      header.appendChild( bell );
-      document.body.appendChild( dropdown );
-
-      // Load unread count
-      loadUnreadCount( user.id, badge );
-
-      // Toggle dropdown on click
-      let dropOpen = false;
-      bell.addEventListener( 'click', async ( e ) => {
-        e.stopPropagation();
-        dropOpen = !dropOpen;
-        dropdown.style.display = dropOpen ? 'block' : 'none';
-        if ( dropOpen ) {
-          await loadNotifications( user.id, dropdown );
-          // Mark all as read
-          await _db.rpc( 'mark_notifications_read', { p_user_id: user.id } );
+          // Unread badge
+          const badge = document.createElement( 'span' );
+          badge.className = 'bf-user-badge';
           badge.style.display = 'none';
-          badge.textContent   = '';
-        }
-      });
+          userBtn.appendChild( badge );
 
-      // Close on outside click
-      document.addEventListener( 'click', () => {
-        if ( dropOpen ) {
-          dropOpen = false;
-          dropdown.style.display = 'none';
+          wrapper.appendChild( userBtn );
+
+          // ── Dropdown ───────────────────────────────────
+          const dropdown = document.createElement( 'div' );
+          dropdown.className = 'bf-user-dropdown';
+
+          // User info header
+          const infoDiv = document.createElement( 'div' );
+          infoDiv.className = 'bf-user-dropdown-header';
+          infoDiv.innerHTML = '';
+
+          const infoName = document.createElement( 'div' );
+          infoName.className = 'bf-user-dropdown-name';
+          infoName.textContent = user.name;
+          infoDiv.appendChild( infoName );
+
+          const infoEmail = document.createElement( 'div' );
+          infoEmail.className = 'bf-user-dropdown-email';
+          infoEmail.textContent = user.email || '';
+          infoDiv.appendChild( infoEmail );
+
+          const infoProvider = document.createElement( 'div' );
+          infoProvider.className = 'bf-user-dropdown-provider';
+          infoProvider.textContent = 'via ' + ( user.provider || 'OAuth' );
+          infoDiv.appendChild( infoProvider );
+
+          dropdown.appendChild( infoDiv );
+
+          // Notifications section
+          const notifHeader = document.createElement( 'div' );
+          notifHeader.className = 'bf-user-dropdown-section';
+          notifHeader.textContent = 'Notifications';
+          dropdown.appendChild( notifHeader );
+
+          const notifList = document.createElement( 'div' );
+          notifList.className = 'bf-user-notif-list';
+          notifList.innerHTML = '<div class="bf-user-notif-empty">Loading...</div>';
+          dropdown.appendChild( notifList );
+
+          // Sign out button
+          const signOutBtn = document.createElement( 'button' );
+          signOutBtn.className = 'bf-user-dropdown-signout';
+          signOutBtn.textContent = 'Sign Out';
+          signOutBtn.addEventListener( 'click', () => {
+            signOut();
+            dropdown.classList.remove( 'open' );
+            userBtn.setAttribute( 'aria-expanded', 'false' );
+          });
+          dropdown.appendChild( signOutBtn );
+
+          document.body.appendChild( dropdown );
+
+          // Toggle dropdown
+          let dropOpen = false;
+          userBtn.addEventListener( 'click', async ( e ) => {
+            e.stopPropagation();
+            dropOpen = !dropOpen;
+            dropdown.classList.toggle( 'open', dropOpen );
+            userBtn.setAttribute( 'aria-expanded', String( dropOpen ) );
+
+            if ( dropOpen ) {
+              // Position dropdown below button
+              const rect = userBtn.getBoundingClientRect();
+              dropdown.style.top  = ( rect.bottom + 4 ) + 'px';
+              dropdown.style.right = Math.max( 8, window.innerWidth - rect.right ) + 'px';
+
+              // Load notifications
+              await loadUserNotifications( user.id, notifList, badge );
+            }
+          });
+
+          // Close on outside click
+          document.addEventListener( 'click', ( e ) => {
+            if ( dropOpen && !wrapper.contains( e.target ) && !dropdown.contains( e.target ) ) {
+              dropOpen = false;
+              dropdown.classList.remove( 'open' );
+              userBtn.setAttribute( 'aria-expanded', 'false' );
+            }
+          });
+
+          // Load unread count immediately
+          if ( _db ) loadUnreadBadge( user.id, badge );
         }
+
+        nav.appendChild( wrapper );
       });
-      dropdown.addEventListener( 'click', ( e ) => e.stopPropagation() );
     }
 
-    async function loadUnreadCount( userId, badge ) {
+    // ── Sign In Modal ──────────────────────────────────────
+    function showSignInModal() {
+      // Remove existing modal
+      const old = document.getElementById( 'bf-signin-modal' );
+      if ( old ) old.remove();
+
+      const overlay = document.createElement( 'div' );
+      overlay.id = 'bf-signin-modal';
+      overlay.className = 'bf-signin-overlay';
+
+      const modal = document.createElement( 'div' );
+      modal.className = 'bf-signin-modal';
+      modal.innerHTML = `
+        <div class="bf-signin-title">Sign in to Brainfolds</div>
+        <p class="bf-signin-desc">Sign in to contribute chapters, leave reviews with your name, and get notifications.</p>
+        <div class="bf-signin-buttons"></div>
+        <button class="bf-signin-close" aria-label="Close">✕</button>
+      `;
+
+      const btnsWrap = modal.querySelector( '.bf-signin-buttons' );
+
+      const googleBtn = document.createElement( 'button' );
+      googleBtn.className = 'bf-signin-btn bf-signin-google';
+      googleBtn.textContent = 'Continue with Google';
+      googleBtn.addEventListener( 'click', () => signInWithGoogle() );
+      btnsWrap.appendChild( googleBtn );
+
+      const ghBtn = document.createElement( 'button' );
+      ghBtn.className = 'bf-signin-btn bf-signin-github';
+      ghBtn.textContent = 'Continue with GitHub';
+      ghBtn.addEventListener( 'click', () => signInWithGitHub() );
+      btnsWrap.appendChild( ghBtn );
+
+      modal.querySelector( '.bf-signin-close' ).addEventListener( 'click', () => overlay.remove() );
+      overlay.addEventListener( 'click', ( e ) => { if ( e.target === overlay ) overlay.remove(); } );
+
+      overlay.appendChild( modal );
+      document.body.appendChild( overlay );
+    }
+
+    // ── Notification helpers ───────────────────────────────
+    async function loadUnreadBadge( userId, badge ) {
+      if ( !_db ) return;
       try {
-        const { data, error } = await _db.rpc( 'unread_notification_count', { p_user_id: userId } );
-        if ( error ) return;
+        const { data } = await _db.rpc( 'unread_notification_count', { p_user_id: userId } );
         if ( data && data > 0 ) {
           badge.textContent   = data > 99 ? '99+' : String( data );
-          badge.style.display = 'block';
+          badge.style.display = '';
         }
       } catch ( err ) { /* silent */ }
     }
 
-    async function loadNotifications( userId, dropdown ) {
+    async function loadUserNotifications( userId, listEl, badge ) {
+      if ( !_db ) return;
       try {
         const { data, error } = await _db
           .from( 'notifications' )
           .select( '*' )
           .eq( 'user_id', userId )
           .order( 'created_at', { ascending: false } )
-          .limit( 20 );
+          .limit( 10 );
 
         if ( error ) throw error;
 
-        dropdown.innerHTML = '';
-
-        const header = document.createElement( 'div' );
-        header.style.cssText = 'padding:12px 16px;font-size:0.82rem;font-weight:600;border-bottom:1px solid var(--border,#333);color:var(--text,#ccc);';
-        header.textContent = 'Notifications';
-        dropdown.appendChild( header );
+        listEl.innerHTML = '';
 
         if ( !data || data.length === 0 ) {
-          const empty = document.createElement( 'div' );
-          empty.style.cssText = 'padding:24px 16px;text-align:center;font-size:0.78rem;color:var(--text-muted,#666);';
-          empty.textContent = 'No notifications yet.';
-          dropdown.appendChild( empty );
+          listEl.innerHTML = '<div class="bf-user-notif-empty">No notifications yet.</div>';
           return;
         }
 
         data.forEach( n => {
           const item = document.createElement( 'div' );
-          item.style.cssText = 'padding:10px 16px;border-bottom:1px solid var(--border,#222);cursor:default;' +
-            ( n.read ? 'opacity:0.6;' : '' );
+          item.className = 'bf-user-notif-item' + ( n.read ? '' : ' unread' );
 
           const title = document.createElement( 'div' );
-          title.style.cssText = 'font-size:0.78rem;font-weight:' + ( n.read ? '400' : '600' ) + ';color:var(--text,#ccc);';
+          title.className = 'bf-user-notif-title';
           title.textContent = n.title;
 
           const body = document.createElement( 'div' );
-          body.style.cssText = 'font-size:0.7rem;color:var(--text-muted,#888);margin-top:2px;';
+          body.className = 'bf-user-notif-body';
           body.textContent = n.body || '';
 
           const time = document.createElement( 'div' );
-          time.style.cssText = 'font-size:0.6rem;color:var(--text-muted,#666);margin-top:4px;';
+          time.className = 'bf-user-notif-time';
           const diff = Date.now() - new Date( n.created_at ).getTime();
           const mins = Math.floor( diff / 60000 );
           if ( mins < 60 )       time.textContent = mins + 'm ago';
@@ -317,35 +421,36 @@ const BFAuth = (() => {
           item.appendChild( body );
           item.appendChild( time );
 
-          // If it has a page_key, make it clickable
           if ( n.page_key ) {
             item.style.cursor = 'pointer';
             item.addEventListener( 'click', () => {
-              // Navigate to the chapter (page_key is like self-sufficiency/s01-foundation/c01-botany-basics/ch01)
-              const parts = n.page_key.split( '/' );
-              if ( parts.length >= 1 ) {
-                window.location.href = '/' + n.page_key + '.html';
-              }
+              window.location.href = '/' + n.page_key + '.html';
             });
           }
 
-          dropdown.appendChild( item );
+          listEl.appendChild( item );
         });
+
+        // Mark all as read
+        await _db.rpc( 'mark_notifications_read', { p_user_id: userId } );
+        badge.style.display = 'none';
+        badge.textContent   = '';
+
       } catch ( err ) {
-        dropdown.innerHTML = '<div style="padding:16px;font-size:0.78rem;color:var(--text-muted);">Could not load notifications.</div>';
+        listEl.innerHTML = '<div class="bf-user-notif-empty">Could not load.</div>';
       }
     }
 
-    // Wire to auth state
-    onAuthChange( ( user ) => renderBell( user ) );
+    // Wire to auth state changes
+    onAuthChange( ( user ) => renderUserNav( user ) );
   }
 
   /* ── Boot ───────────────────────────────────────────────── */
   if ( document.readyState === 'loading' ) {
-    document.addEventListener( 'DOMContentLoaded', () => { initClient(); initNotificationBell(); } );
+    document.addEventListener( 'DOMContentLoaded', () => { initClient(); initUserNav(); } );
   } else {
     initClient();
-    initNotificationBell();
+    initUserNav();
   }
 
   /* ── Public API ─────────────────────────────────────────── */

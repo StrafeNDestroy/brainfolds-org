@@ -11,12 +11,13 @@
 const BRAINFOLDS = (() => {
   'use strict';
 
-  /* ── Constants ──────────────────────────────────────────── */
-  const MAX_STARS         = 10;
-  const MIN_REVIEWS_SHOW  = 10;
+  /* ── Constants (from BFConfig if available, else defaults) ── */
+  const _c                = ( typeof BFConfig !== 'undefined' ) ? BFConfig : {};
+  const MAX_STARS         = _c.MAX_STARS        || 10;
+  const MIN_REVIEWS_SHOW  = _c.MIN_REVIEWS_SHOW || 10;
   const REVIEWS_PER_PAGE  = 8;
-  const MAX_NAME_LENGTH   = 20;
-  const MAX_REVIEW_LENGTH = 1000;
+  const MAX_NAME_LENGTH   = _c.MAX_NAME_LENGTH  || 20;
+  const MAX_REVIEW_LENGTH = _c.MAX_REVIEW_LENGTH || 1000;
 
   /*  OFFLINE CHECK: Disable database if running locally or as a file */
   const isOffline = window.location.protocol === 'file:' ||
@@ -584,6 +585,16 @@ const BRAINFOLDS = (() => {
       msgEl.textContent = 'Submitting…';
 
       try {
+        // Get IP hash for rate limiting
+        let ipHash = 'anonymous';
+        try {
+          const ipRes   = await fetch( 'https://api.ipify.org?format=text' );
+          const ipText  = await ipRes.text();
+          const ipBytes = new TextEncoder().encode( ipText );
+          const hashBuf = await crypto.subtle.digest( 'SHA-256', ipBytes );
+          ipHash = Array.from( new Uint8Array( hashBuf ) ).map( b => b.toString(16).padStart(2, '0') ).join( '' );
+        } catch ( e ) { /* use default */ }
+
         const insertData = {
           page_key:      pageKey,
           rating:        selectedRating,
@@ -591,6 +602,7 @@ const BRAINFOLDS = (() => {
           review_text:   reviewText,
           comment_type:  selectedCommentType,
           browser_token: getBrowserToken(),
+          ip_hash:       ipHash,
         };
 
         // Attach user_id if signed in (links review to account)
